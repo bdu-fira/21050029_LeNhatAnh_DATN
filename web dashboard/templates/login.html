@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Hệ thống nhận diện biển số xe</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+            min-width: 450px;
+            max-width: 500px;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-header .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-header .logo i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        .login-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .role-selector {
+            display: flex;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        .role-option {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .role-option.admin {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            color: #1976d2;
+        }
+
+        .role-option.admin.active {
+            background: linear-gradient(135deg, #1976d2, #1565c0);
+            color: white;
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(25, 118, 210, 0.3);
+        }
+
+        .role-option.guard {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            color: #388e3c;
+        }
+
+        .role-option.guard.active {
+            background: linear-gradient(135deg, #388e3c, #2e7d32);
+            color: white;
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(56, 142, 60, 0.3);
+        }
+
+        .role-option i {
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+
+        .login-form {
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .form-group .input-container {
+            position: relative;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-group .input-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 1.1rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+
+        .remember-me label {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 0;
+        }
+
+        .forgot-password {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-btn i {
+            margin-right: 10px;
+        }
+
+        .login-btn.loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .alert.success {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert.warning {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .alert i {
+            margin-right: 8px;
+        }
+
+        .login-footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .login-footer p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .login-footer .version {
+            color: #999;
+            font-size: 0.8rem;
+        }
+
+        .shake {
+            animation: shake 0.6s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @media (max-width: 768px) {
+            .login-container {
+                min-width: auto;
+                width: 100%;
+                max-width: 400px;
+                padding: 30px 25px;
+                margin: 10px;
+            }
+
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .role-selector {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .role-option {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container" id="loginContainer">
+        <div class="login-header">
+            <div class="logo">
+                <i class="fas fa-car"></i>
+            </div>
+            <h1>Đăng nhập hệ thống</h1>
+            <p>Hệ thống nhận diện biển số xe</p>
+        </div>
+
+        <div class="alert" id="alertMessage">
+            <i class="fas fa-info-circle"></i>
+            <span id="alertText"></span>
+        </div>
+
+        <div class="role-selector">
+            <div class="role-option admin active" data-role="admin">
+                <i class="fas fa-user-cog"></i>
+                Quản trị viên
+            </div>
+            <div class="role-option guard" data-role="guard">
+                <i class="fas fa-shield-alt"></i>
+                Bảo vệ
+            </div>
+        </div>
+
+        <form class="login-form" id="loginForm">
+            <div class="form-group">
+                <label for="username">Tên đăng nhập</label>
+                <div class="input-container">
+                    <input type="text" id="username" name="username" required placeholder="Nhập tên đăng nhập">
+                    <i class="fas fa-user input-icon"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Mật khẩu</label>
+                <div class="input-container">
+                    <input type="password" id="password" name="password" required placeholder="Nhập mật khẩu">
+                    <button type="button" class="password-toggle" id="passwordToggle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="remember-forgot">
+                <div class="remember-me">
+                    <input type="checkbox" id="rememberMe" name="remember">
+                    <label for="rememberMe">Ghi nhớ đăng nhập</label>
+                </div>
+                <a href="#" class="forgot-password" id="forgotPassword">Quên mật khẩu?</a>
+            </div>
+
+            <button type="submit" class="login-btn" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i>
+                Đăng nhập
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <p>© 2025 Hệ thống bãi đỗ xe Trường ĐH Bình Dương</p>
+            <p class="version">Phiên bản 2.0.0</p>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let currentRole = 'admin';
+        let loginAttempts = 0;
+        let isLocked = false;
+
+        // DOM elements
+        const loginContainer = document.getElementById('loginContainer');
+        const alertMessage = document.getElementById('alertMessage');
+        const alertText = document.getElementById('alertText');
+        const roleOptions = document.querySelectorAll('.role-option');
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const passwordToggle = document.getElementById('passwordToggle');
+        const rememberMe = document.getElementById('rememberMe');
+        const forgotPassword = document.getElementById('forgotPassword');
+        const loginBtn = document.getElementById('loginBtn');
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing...');
+
+            // Initialize event listeners
+            initializeEventListeners();
+
+            // Focus on username
+            usernameInput.focus();
+
+            console.log('Login system initialized successfully');
+        });
+
+        function initializeEventListeners() {
+            console.log('Setting up event listeners...');
+
+            // Role selection
+            roleOptions.forEach(option => {
+                option.addEventListener('click', handleRoleSelect);
+            });
+
+            // Form submission - PREVENT DEFAULT SUBMISSION
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Form submit prevented, calling handleLogin...');
+                handleLogin(e);
+                return false;
+            });
+
+            // Login button click
+            loginBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Login button clicked');
+                handleLogin(e);
+            });
+
+            // Password toggle
+            passwordToggle.addEventListener('click', togglePasswordVisibility);
+
+            // Forgot password
+            forgotPassword.addEventListener('click', function(e) {
+                e.preventDefault();
+                //showAlert('Demo: admin/admin123 hoặc baove/baove123', 'warning');
+            });
+
+            console.log('Event listeners set up successfully');
+        }
+
+        function handleRoleSelect() {
+            const role = this.dataset.role;
+
+            // Remove active class from all options
+            roleOptions.forEach(option => {
+                option.classList.remove('active');
+            });
+
+            // Add active class to selected option
+            this.classList.add('active');
+            currentRole = role;
+
+            // Update placeholder
+            if (role === 'admin') {
+                usernameInput.placeholder = 'Nhập tên đăng nhập quản trị viên';
+                //showAlert('Gợi ý: admin / admin123', 'warning');
+            } else {
+                usernameInput.placeholder = 'Nhập tên đăng nhập bảo vệ';
+                //showAlert('Gợi ý: baove / baove123', 'warning');
+            }
+
+            console.log('Role selected:', role);
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log('=== LOGIN ATTEMPT ===');
+            console.log('Username:', usernameInput.value);
+            console.log('Role:', currentRole);
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!username || !password) {
+                showAlert('Vui lòng nhập đầy đủ thông tin đăng nhập', 'error');
+                shakeContainer();
+                return false;
+            }
+
+            setLoadingState(true);
+
+            try {
+                console.log('Sending AJAX request to /api/auth/login...');
+
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        role: currentRole
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (response.ok && result.success) {
+                    console.log('✅ LOGIN SUCCESS!');
+                    showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+
+                    setTimeout(() => {
+                        console.log('Redirecting to dashboard...');
+                        window.location.href = '/';
+                    }, 1500);
+
+                } else {
+                    console.log('❌ LOGIN FAILED:', result.error);
+                    showAlert(result.error || 'Thông tin đăng nhập không chính xác', 'error');
+                    shakeContainer();
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+
+            } catch (error) {
+                console.error('❌ REQUEST FAILED:', error);
+
+                // FALLBACK METHOD
+                console.log('Trying fallback validation...');
+                if ((username === 'admin' && password === 'admin123' && currentRole === 'admin') ||
+                    (username === 'baove' && password === 'baove123' && currentRole === 'guard')) {
+
+                    console.log('✅ FALLBACK LOGIN SUCCESS!');
+                    showAlert('Đăng nhập thành công!', 'success');
+
+                    setTimeout(() => {
+                        console.log('Fallback redirect...');
+                        window.location.href = '/';
+                    }, 1500);
+                } else {
+                    showAlert('Lỗi kết nối hoặc thông tin đăng nhập sai', 'error');
+                    shakeContainer();
+                }
+            } finally {
+                setLoadingState(false);
+            }
+
+            return false;
+        }
+
+        function togglePasswordVisibility() {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            passwordToggle.innerHTML = isPassword
+                ? '<i class="fas fa-eye-slash"></i>'
+                : '<i class="fas fa-eye"></i>';
+        }
+
+        function showAlert(message, type = 'info') {
+            alertText.textContent = message;
+            alertMessage.className = `alert ${type}`;
+            alertMessage.style.display = 'block';
+
+            if (type !== 'error') {
+                setTimeout(() => {
+                    hideAlert();
+                }, 5000);
+            }
+        }
+
+        function hideAlert() {
+            alertMessage.style.display = 'none';
+        }
+
+        function setLoadingState(loading) {
+            loginBtn.disabled = loading;
+
+            if (loading) {
+                loginBtn.classList.add('loading');
+                loginBtn.innerHTML = '<i class="fas fa-spinner"></i> Đang đăng nhập...';
+            } else {
+                loginBtn.classList.remove('loading');
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Đăng nhập';
+            }
+        }
+
+        function shakeContainer() {
+            loginContainer.classList.add('shake');
+            setTimeout(() => {
+                loginContainer.classList.remove('shake');
+            }, 600);
+        }
+
+        // Debug function
+        window.testLogin = function() {
+            console.log('Testing login API...');
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: 'admin', password: 'admin123', role: 'admin'})
+            }).then(r => r.json()).then(console.log).catch(console.error);
+        };
+
+        console.log('Login script loaded successfully!');
+    </script>
+</body>
+</html>

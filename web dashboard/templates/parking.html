@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý bãi đỗ xe - Hệ thống nhận diện biển số xe</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/parking.css">
+</head>
+<body>
+    <div class="bg-particles"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-parking"></i> Quản lý bãi đỗ xe</h1>
+            <div class="nav-links">
+                <a href="/"><i class="fas fa-camera"></i> Quay lại camera chính</a>
+                <a href="/download_violations"><i class="fas fa-download"></i> Tải xuống dữ liệu vi phạm</a>
+            </div>
+        </div>
+
+        <div class="main-camera">
+            <img src="{{ url_for('video_stream') }}" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+
+        <div class="top-section">
+            <div class="parking-stats-summary">
+                <div class="stats-title">
+                    <i class="fas fa-chart-pie"></i>Thống kê bãi đỗ
+                </div>
+                <div class="stats-legend">
+                    <div class="legend-item">
+                        <div class="legend-color color-empty"></div>
+                        <span>Trống</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-occupied"></div>
+                        <span>Đã đỗ</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-incorrect"></div>
+                        <span>Đỗ sai</span>
+                    </div>
+                </div>
+                <ul class="stats-list">
+                    <li class="stats-item">
+                        <span class="stats-label"><i class="fas fa-th"></i> Tổng số vị trí:</span>
+                        <span class="stats-value total" id="total-spots">17</span>
+                    </li>
+                    <li class="stats-item">
+                        <span class="stats-label"><i class="fas fa-check-circle"></i> Vị trí trống:</span>
+                        <span class="stats-value empty" id="empty-spots">0</span>
+                    </li>
+                    <li class="stats-item">
+                        <span class="stats-label"><i class="fas fa-car"></i> Vị trí đã đỗ:</span>
+                        <span class="stats-value occupied" id="occupied-spots">0</span>
+                    </li>
+                    <li class="stats-item">
+                        <span class="stats-label"><i class="fas fa-exclamation-triangle"></i> Đỗ sai vị trí:</span>
+                        <span class="stats-value incorrect" id="incorrect-spots">0</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="violation-alerts">
+                <h2><i class="fas fa-bell"></i> Cảnh báo vi phạm</h2>
+                <div id="violation-list" class="violation-list">
+                    <!-- Vi phạm sẽ được thêm vào đây -->
+                </div>
+            </div>
+        </div>
+
+        <div class="parking-details">
+            <h2><i class="fas fa-th-large"></i> Chi tiết vị trí đỗ xe</h2>
+            <div id="parking-grid" class="parking-grid">
+                <!-- Parking spots will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/parking.js"></script>
+</body>
+</html>

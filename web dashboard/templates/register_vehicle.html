@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký xe - Hệ thống bãi đỗ xe</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #333;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        .nav-back {
+            margin-bottom: 30px;
+        }
+
+        .nav-back a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-back a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .form-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .form-group label.required::after {
+            content: ' *';
+            color: #f44336;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .photo-upload {
+            border: 2px dashed #e0e0e0;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f8f9fa;
+        }
+
+        .photo-upload:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .photo-upload.drag-over {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .photo-upload input[type="file"] {
+            display: none;
+        }
+
+        .photo-upload-content {
+            pointer-events: none;
+        }
+
+        .photo-upload i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .photo-upload p {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .photo-upload .file-info {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .photo-preview {
+            display: none;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .photo-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .photo-preview .remove-photo {
+            display: inline-block;
+            margin-top: 10px;
+            color: #f44336;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .photo-preview .remove-photo:hover {
+            text-decoration: underline;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading i {
+            font-size: 2rem;
+            color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            animation: slideInRight 0.5s ease-out;
+            max-width: 400px;
+        }
+
+        .notification.success {
+            background: #4CAF50;
+        }
+
+        .notification.error {
+            background: #f44336;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .form-help {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-help h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .form-help ul {
+            margin-left: 20px;
+            color: #333;
+        }
+
+        .form-help li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-back">
+            <a href="/"><i class="fas fa-arrow-left"></i> Quay lại trang chủ</a>
+        </div>
+
+        <div class="header">
+            <h1><i class="fas fa-car-alt"></i> Đăng ký xe mới</h1>
+            <p>Nhập thông tin chi tiết để đăng ký xe vào hệ thống</p>
+        </div>
+
+        <div class="form-help">
+            <h3><i class="fas fa-info-circle"></i> Hướng dẫn:</h3>
+            <ul>
+                <li>Các trường có dấu (*) là bắt buộc</li>
+                <li>Biển số xe phải theo định dạng Việt Nam (VD: 61A-12345)</li>
+                <li>Ảnh xe nên có kích thước dưới 5MB</li>
+                <li>Thông tin này sẽ được hiển thị khi xe ra vào bãi</li>
+            </ul>
+        </div>
+
+        <div class="form-container">
+            <form id="registration-form">
+                <div class="form-grid">
+                    <!-- Thông tin xe -->
+                    <div class="form-group">
+                        <label for="plate-number" class="required">Biển số xe</label>
+                        <input type="text" id="plate-number" name="plate_number" placeholder="VD: 61A-12345" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vehicle-type" class="required">Loại xe</label>
+                        <select id="vehicle-type" name="vehicle_type" required>
+                            <option value="">-- Chọn loại xe --</option>
+                            <option value="car">Xe hơi</option>
+                            <option value="motorbike">Xe máy</option>
+                            <option value="truck">Xe tải</option>
+                            <option value="bus">Xe buýt</option>
+                            <option value="bicycle">Xe đạp</option>
+                            <option value="other">Khác</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vehicle-brand">Hãng xe</label>
+                        <input type="text" id="vehicle-brand" name="vehicle_brand" placeholder="VD: Toyota, Honda, Yamaha...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vehicle-model">Mẫu xe</label>
+                        <input type="text" id="vehicle-model" name="vehicle_model" placeholder="VD: Camry, Civic, Exciter...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vehicle-color">Màu xe</label>
+                        <input type="text" id="vehicle-color" name="vehicle_color" placeholder="VD: Trắng, Đen, Xanh...">
+                    </div>
+
+                    <!-- Thông tin chủ xe -->
+                    <div class="form-group">
+                        <label for="owner-name" class="required">Tên chủ xe</label>
+                        <input type="text" id="owner-name" name="owner_name" placeholder="Nhập họ tên đầy đủ" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="owner-phone">Số điện thoại</label>
+                        <input type="tel" id="owner-phone" name="owner_phone" placeholder="VD: 0123456789">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="owner-email">Email</label>
+                        <input type="email" id="owner-email" name="owner_email" placeholder="email@example.com">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="owner-address">Địa chỉ</label>
+                        <input type="text" id="owner-address" name="owner_address" placeholder="Nhập địa chỉ đầy đủ">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="notes">Ghi chú</label>
+                        <textarea id="notes" name="notes" placeholder="Ghi chú thêm về xe hoặc chủ xe..."></textarea>
+                    </div>
+
+                    <!-- Upload ảnh -->
+                    <div class="form-group full-width">
+                        <label for="vehicle-photo">Ảnh xe</label>
+                        <div class="photo-upload" id="photo-upload">
+                            <input type="file" id="vehicle-photo" name="photo" accept="image/*">
+                            <div class="photo-upload-content">
+                                <i class="fas fa-camera"></i>
+                                <p>Nhấp để chọn ảnh hoặc kéo thả ảnh vào đây</p>
+                                <div class="file-info">Hỗ trợ: JPG, PNG, GIF (Tối đa 5MB)</div>
+                            </div>
+                        </div>
+                        <div class="photo-preview" id="photo-preview">
+                            <img id="preview-image" src="" alt="Preview">
+                            <div class="remove-photo" onclick="removePhoto()">
+                                <i class="fas fa-times"></i> Xóa ảnh
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="loading" id="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Đang xử lý...</p>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                        <i class="fas fa-undo"></i> Làm mới
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        <i class="fas fa-save"></i> Đăng ký xe
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        // Form submission
+        document.getElementById('registration-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submit-btn');
+            const loading = document.getElementById('loading');
+
+            // Validate form
+            if (!validateForm()) {
+                return;
+            }
+
+            // Show loading
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                // Collect form data
+                const formData = new FormData(this);
+                const vehicleData = {};
+
+                // Convert FormData to object
+                for (let [key, value] of formData.entries()) {
+                    if (key !== 'photo') {
+                        vehicleData[key] = value;
+                    }
+                }
+
+                // Register vehicle
+                const response = await fetch('/api/register_vehicle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(vehicleData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Upload photo if selected
+                    if (selectedFile) {
+                        const photoFormData = new FormData();
+                        photoFormData.append('photo', selectedFile);
+                        photoFormData.append('plate_number', vehicleData.plate_number);
+
+                        const photoResponse = await fetch('/api/upload_vehicle_photo', {
+                            method: 'POST',
+                            body: photoFormData
+                        });
+
+                        const photoResult = await photoResponse.json();
+                        if (!photoResult.success) {
+                            console.warn('Photo upload failed:', photoResult.error);
+                        }
+                    }
+
+                    showNotification('Đăng ký xe thành công!', 'success');
+                    resetForm();
+
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    showNotification(result.message || 'Có lỗi xảy ra khi đăng ký xe', 'error');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showNotification('Có lỗi xảy ra khi đăng ký xe', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+
+        // Form validation
+        function validateForm() {
+            const requiredFields = ['plate_number', 'owner_name', 'vehicle_type'];
+            let isValid = true;
+
+            requiredFields.forEach(field => {
+                const element = document.getElementById(field.replace('_', '-'));
+                if (!element.value.trim()) {
+                    element.style.borderColor = '#f44336';
+                    isValid = false;
+                } else {
+                    element.style.borderColor = '#e0e0e0';
+                }
+            });
+
+            // Validate plate number format
+            const plateNumber = document.getElementById('plate-number').value.trim();
+            const plateRegex = /^[0-9]{2}[A-Z]{1,2}-[0-9]{3,6}(\.[0-9]{2})?$/i;
+
+            if (plateNumber && !plateRegex.test(plateNumber)) {
+                document.getElementById('plate-number').style.borderColor = '#f44336';
+                showNotification('Biển số xe không đúng định dạng!', 'error');
+                isValid = false;
+            }
+
+            // Validate email if provided
+            const email = document.getElementById('owner-email').value.trim();
+            if (email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    document.getElementById('owner-email').style.borderColor = '#f44336';
+                    showNotification('Email không hợp lệ!', 'error');
+                    isValid = false;
+                }
+            }
+
+            // Validate phone if provided
+            const phone = document.getElementById('owner-phone').value.trim();
+            if (phone) {
+                const phoneRegex = /^[0-9]{10,11}$/;
+                if (!phoneRegex.test(phone)) {
+                    document.getElementById('owner-phone').style.borderColor = '#f44336';
+                    showNotification('Số điện thoại không hợp lệ!', 'error');
+                    isValid = false;
+                }
+            }
+
+            if (!isValid) {
+                showNotification('Vui lòng kiểm tra lại thông tin!', 'error');
+            }
+
+            return isValid;
+        }
+
+        // Photo upload handling
+        const photoUpload = document.getElementById('photo-upload');
+        const fileInput = document.getElementById('vehicle-photo');
+        const photoPreview = document.getElementById('photo-preview');
+        const previewImage = document.getElementById('preview-image');
+
+        photoUpload.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop
+        photoUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            photoUpload.classList.add('drag-over');
+        });
+
+        photoUpload.addEventListener('dragleave', () => {
+            photoUpload.classList.remove('drag-over');
+        });
+
+        photoUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            photoUpload.classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                showNotification('Chỉ hỗ trợ file JPG, PNG, GIF!', 'error');
+                return;
+            }
+
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('Kích thước file không được vượt quá 5MB!', 'error');
+                return;
+            }
+
+            selectedFile = file;
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                photoPreview.style.display = 'block';
+                photoUpload.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removePhoto() {
+            selectedFile = null;
+            photoPreview.style.display = 'none';
+            photoUpload.style.display = 'block';
+            fileInput.value = '';
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('registration-form').reset();
+            removePhoto();
+
+            // Reset border colors
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.style.borderColor = '#e0e0e0';
+            });
+        }
+
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 4000);
+        }
+
+        // Auto-format plate number
+        document.getElementById('plate-number').addEventListener('input', function(e) {
+            let value = e.target.value.toUpperCase();
+
+            // Remove invalid characters
+            value = value.replace(/[^0-9A-Z\-.]/g, '');
+
+            // Auto-format common patterns
+            if (value.length >= 3 && value.length <= 4 && !value.includes('-')) {
+                // Add dash after province code and letter(s)
+                const match = value.match(/^(\d{2}[A-Z]{1,2})(\d+)$/);
+                if (match) {
+                    value = match[1] + '-' + match[2];
+                }
+            }
+
+            e.target.value = value;
+        });
+
+        // Auto-format phone number
+        document.getElementById('owner-phone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            e.target.value = value;
+        });
+
+        // Auto-capitalize owner name
+        document.getElementById('owner-name').addEventListener('input', function(e) {
+            let value = e.target.value;
+            // Capitalize first letter of each word
+            value = value.replace(/\b\w/g, l => l.toUpperCase());
+            e.target.value = value;
+        });
+
+        // Clear validation errors on input
+        const formInputs = document.querySelectorAll('input, select, textarea');
+        formInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.style.borderColor === 'rgb(244, 67, 54)') {
+                    this.style.borderColor = '#e0e0e0';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

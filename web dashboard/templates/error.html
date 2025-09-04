@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lỗi {{ error_code }} - Hệ thống nhận diện biển số xe</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .error-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .error-icon {
+            font-size: 6rem;
+            margin-bottom: 30px;
+        }
+
+        .error-icon.error-404 {
+            color: #ff9800;
+        }
+
+        .error-icon.error-403 {
+            color: #f44336;
+        }
+
+        .error-icon.error-500 {
+            color: #9c27b0;
+        }
+
+        .error-code {
+            font-size: 4rem;
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .error-message {
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .error-description {
+            font-size: 1rem;
+            color: #888;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        .user-info {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 30px 25px;
+            }
+
+            .error-icon {
+                font-size: 4rem;
+            }
+
+            .error-code {
+                font-size: 3rem;
+            }
+
+            .error-message {
+                font-size: 1.2rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon error-{{ error_code }}">
+            {% if error_code == 404 %}
+                <i class="fas fa-search"></i>
+            {% elif error_code == 403 %}
+                <i class="fas fa-lock"></i>
+            {% elif error_code == 500 %}
+                <i class="fas fa-exclamation-triangle"></i>
+            {% else %}
+                <i class="fas fa-exclamation-circle"></i>
+            {% endif %}
+        </div>
+
+        <div class="error-code">{{ error_code }}</div>
+
+        <div class="error-message">{{ error_message }}</div>
+
+        <div class="error-description">
+            {% if error_code == 404 %}
+                Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.
+                Vui lòng kiểm tra lại đường dẫn hoặc quay về trang chủ.
+            {% elif error_code == 403 %}
+                Bạn không có quyền truy cập vào tài nguyên này.
+                {% if user_role == 'guard' %}
+                    Một số chức năng chỉ dành cho quản trị viên.
+                {% endif %}
+                Vui lòng liên hệ quản trị viên nếu bạn cần quyền truy cập.
+            {% elif error_code == 500 %}
+                Đã xảy ra lỗi máy chủ nội bộ. Vui lòng thử lại sau hoặc liên hệ hỗ trợ kỹ thuật.
+            {% else %}
+                Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.
+            {% endif %}
+        </div>
+
+        <div class="action-buttons">
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Quay lại
+            </a>
+
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i>
+                Trang chủ
+            </a>
+
+            {% if error_code == 403 and user_role != 'admin' %}
+            <a href="/login" class="btn btn-secondary">
+                <i class="fas fa-sign-out-alt"></i>
+                Đăng nhập lại
+            </a>
+            {% endif %}
+        </div>
+
+        {% if user_role %}
+        <div class="user-info">
+            <p>Đăng nhập với vai trò:
+                <strong>
+                    {% if user_role == 'admin' %}
+                        Quản trị viên
+                    {% elif user_role == 'guard' %}
+                        Bảo vệ
+                    {% else %}
+                        {{ user_role }}
+                    {% endif %}
+                </strong>
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Auto redirect to home after 30 seconds for 500 errors
+        {% if error_code == 500 %}
+        setTimeout(function() {
+            if (confirm('Tự động chuyển về trang chủ sau 30 giây. Tiếp tục?')) {
+                window.location.href = '/';
+            }
+        }, 30000);
+        {% endif %}
+
+        // Log error for debugging (in development)
+        console.log('Error Page:', {
+            code: {{ error_code }},
+            message: '{{ error_message }}',
+            userRole: '{{ user_role or "none" }}',
+            timestamp: new Date().toISOString()
+        });
+    </script>
+</body>
+</html>

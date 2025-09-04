@@ -1,0 +1,3312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống bãi đỗ xe</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+
+        /* Illegal Parking Notification Styles */
+.illegal-parking-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    width: 400px;
+    max-height: 500px;
+    overflow-y: auto;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.illegal-parking-notification {
+    background: white;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    animation: slideInRight 0.5s ease-out;
+    pointer-events: auto;
+    border-left: 5px solid;
+    overflow: hidden;
+    position: relative;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.illegal-parking-notification.warning {
+    border-left-color: #ff9800;
+    animation: slideInRight 0.5s ease-out, shake 0.5s ease-in-out 0.5s;
+}
+
+.illegal-parking-notification.violation {
+    border-left-color: #f44336;
+    animation: slideInRight 0.5s ease-out, shake 0.8s ease-in-out 0.5s infinite;
+}
+
+.illegal-parking-notification.cleared {
+    border-left-color: #4CAF50;
+    animation: slideInRight 0.5s ease-out;
+}
+
+.illegal-parking-header {
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.illegal-parking-notification.warning .illegal-parking-header {
+    background: linear-gradient(135deg, #ffb74d, #ff9800);
+    color: white;
+}
+
+.illegal-parking-notification.violation .illegal-parking-header {
+    background: linear-gradient(135deg, #ef5350, #f44336);
+    color: white;
+}
+
+.illegal-parking-notification.cleared .illegal-parking-header {
+    background: linear-gradient(135deg, #66bb6a, #4CAF50);
+    color: white;
+}
+
+.illegal-parking-body {
+    padding: 15px 20px;
+}
+
+.illegal-parking-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.illegal-parking-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.illegal-parking-info-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.illegal-parking-info-value {
+    color: #333;
+    font-weight: 500;
+}
+
+.illegal-parking-timer {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 10px;
+    background: #f5f5f5;
+}
+
+.illegal-parking-notification.violation .illegal-parking-timer {
+    color: #f44336;
+    background: #ffebee;
+}
+
+.illegal-parking-notification.warning .illegal-parking-timer {
+    color: #ff9800;
+    background: #fff3e0;
+}
+
+.close-notification {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.close-notification:hover {
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.1);
+}
+
+/* Alert banner */
+.illegal-parking-alert-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    z-index: 10000;
+    display: none;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+.illegal-parking-alert-banner.show {
+    display: block;
+}
+
+/* Sound indicator */
+.sound-indicator {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    z-index: 9999;
+}
+
+.sound-indicator.show {
+    display: flex;
+}
+
+.sound-wave {
+    width: 3px;
+    height: 20px;
+    background: white;
+    margin: 0 2px;
+    animation: wave 0.5s ease-in-out infinite;
+}
+
+.sound-wave:nth-child(2) { animation-delay: 0.1s; }
+.sound-wave:nth-child(3) { animation-delay: 0.2s; }
+.sound-wave:nth-child(4) { animation-delay: 0.3s; }
+
+@keyframes wave {
+    0%, 100% { height: 20px; }
+    50% { height: 5px; }
+}
+
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        /* User info và logout button styles */
+        .user-info-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .user-info-container:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .user-role {
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+        .user-role.admin {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+        .user-role.guard {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.4);
+        }
+
+        .logout-btn i {
+            font-size: 1rem;
+        }
+
+        .container {
+            max-width: 95%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            padding-top: 80px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.1); }
+            to { text-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 30px rgba(255,255,255,0.3); }
+        }
+
+        .nav-links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 10px 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .nav-links a.active {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.8);
+        }
+
+        /* Camera dual layout */
+        .dual-camera-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .camera-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .camera-title {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .camera-frame {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: linear-gradient(45deg, #000, #1a1a1a);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .camera-frame:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+
+        .camera-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-entry {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: 2px solid #4CAF50;
+        }
+
+        .btn-entry:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-exit {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: 2px solid #f44336;
+        }
+
+        .btn-exit:hover {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+
+        /* Reset dropdown */
+        .reset-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #FF5722, #E64A19);
+            color: white;
+            border: 2px solid #FF5722;
+        }
+
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #E64A19, #FF5722);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 87, 34, 0.3);
+        }
+
+        .reset-options {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            min-width: 280px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            border: 2px solid rgba(255,255,255,0.8);
+            z-index: 1000;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .reset-options.show {
+            display: block;
+            animation: slideUpFadeIn 0.3s ease-out;
+        }
+
+        @keyframes slideUpFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .reset-option {
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #eee;
+        }
+
+        .reset-option:last-child {
+            border-bottom: none;
+        }
+
+        .reset-option:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .reset-option.safe:hover {
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid #4CAF50;
+        }
+
+        .reset-option.danger:hover {
+            background: rgba(244, 67, 54, 0.1);
+            border-left: 4px solid #f44336;
+        }
+
+        .reset-option i {
+            font-size: 1.5rem;
+            width: 30px;
+            text-align: center;
+        }
+
+        .reset-option.safe i {
+            color: #4CAF50;
+        }
+
+        .reset-option.danger i {
+            color: #f44336;
+        }
+
+        .reset-option div {
+            text-align: left;
+        }
+
+        .reset-option strong {
+            display: block;
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .reset-option small {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        /* Capture container with vehicle info */
+        .capture-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .capture-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .capture-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .capture-box:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        .capture-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .capture-image {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .capture-image:hover {
+            transform: scale(1.02);
+            border-color: #667eea;
+        }
+
+        .plate-info {
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9ff, #f0f2f8);
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+            font-weight: 500;
+            line-height: 1.6;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .vehicle-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+            border-radius: 15px;
+            border-left: 4px solid #4CAF50;
+            display: none;
+        }
+
+        .vehicle-info.show {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .vehicle-info h4 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .vehicle-info .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(46, 125, 50, 0.1);
+        }
+
+        .vehicle-info .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .vehicle-info .info-label {
+            font-weight: 600;
+            color: #2e7d32;
+        }
+
+        .vehicle-info .info-value {
+            color: #333;
+        }
+
+        .registration-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-registered {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-unregistered {
+            background: #ff9800;
+            color: white;
+        }
+
+        /* Status indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .status-active {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-inactive {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        /* Stats container */
+        .stats-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4CAF50, #2196F3, #FF9800);
+        }
+
+        .stats-title {
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats-title i {
+            color: #667eea;
+            font-size: 1.6rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-box:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .stat-box div:first-child {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-box h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Search container */
+        .search-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1);
+        }
+
+        .search-container h2 {
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-container h2 i {
+            color: #667eea;
+            font-size: 1.6rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px 20px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 50px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            color: white;
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(33, 150, 243, 0.4);
+        }
+
+        .search-results {
+            display: none;
+            margin-top: 25px;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border-radius: 15px;
+            border: 2px solid rgba(102, 126, 234, 0.1);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-results img {
+            max-width: 100%;
+            height: auto;
+            margin: 15px 0;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .search-results img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .result-info {
+            margin: 15px 0;
+            font-weight: 500;
+            line-height: 1.8;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        .notification.success {
+            background: #4CAF50;
+        }
+
+        .notification.error {
+            background: #f44336;
+        }
+
+        .notification.info {
+            background: #2196F3;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Modals */
+        .reset-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .reset-modal-content {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .reset-modal h3 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reset-modal-body {
+            margin-bottom: 25px;
+        }
+
+        .reset-modal-body p {
+            margin-bottom: 15px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .reset-modal-body ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .reset-modal-body li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .reset-modal-footer {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .modal-btn-confirm {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(244, 67, 54, 0.3);
+        }
+
+        .modal-btn-confirm-soft {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .modal-btn-confirm-soft:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .soft-reset {
+            border: 3px solid #4CAF50;
+            box-shadow: 0 20px 60px rgba(76, 175, 80, 0.3);
+        }
+
+        .soft-reset h3 {
+            color: #2e7d32;
+        }
+
+        .hard-reset {
+            border: 3px solid #f44336;
+            box-shadow: 0 20px 60px rgba(244, 67, 54, 0.3);
+        }
+
+        .hard-reset h3 {
+            color: #d32f2f;
+        }
+
+        /* Logout modal */
+        .logout-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .logout-modal-content {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: modalSlideIn 0.3s ease-out;
+            text-align: center;
+        }
+
+        .logout-modal h3 {
+            color: #f44336;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logout-modal p {
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .logout-modal-footer {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .dual-camera-container,
+            .capture-container {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: auto;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .user-info-container {
+                top: 10px;
+                right: 10px;
+                padding: 8px 15px;
+                border-radius: 40px;
+            }
+
+            .user-info {
+                font-size: 0.8rem;
+            }
+
+            .logout-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+
+            .container {
+                padding-top: 60px;
+            }
+
+            .reset-options {
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                right: 20px;
+                min-width: auto;
+            }
+
+            .reset-modal-content, .logout-modal-content {
+                margin: 10% auto;
+                padding: 20px;
+                width: 95%;
+            }
+
+            .reset-modal-footer, .logout-modal-footer {
+                flex-direction: column;
+            }
+
+            .modal-btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .user-info {
+                display: none;
+            }
+
+            .user-info-container {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="illegal-parking-container" class="illegal-parking-container"></div>
+<div id="illegal-parking-alert-banner" class="illegal-parking-alert-banner">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span id="alert-banner-text">CÓ XE ĐANG VI PHẠM ĐỖ XE!</span>
+</div>
+<div id="sound-indicator" class="sound-indicator">
+    <i class="fas fa-volume-up"></i>
+    <div class="sound-wave"></div>
+    <div class="sound-wave"></div>
+    <div class="sound-wave"></div>
+    <div class="sound-wave"></div>
+    <span>Cảnh báo âm thanh</span>
+</div>
+
+
+
+    <div class="bg-particles"></div>
+
+    <!-- User Info and Logout Button -->
+<!-- User Info and Logout Button -->
+<div class="user-info-container">
+    <div class="user-info">
+        <div class="user-name">{{ user_name or 'Người dùng' }}</div>
+        <div class="user-role {% if user_role == 'admin' %}admin{% else %}guard{% endif %}">
+            {% if user_role == 'admin' %}
+                Quản trị viên
+            {% elif user_role == 'guard' %}
+                Bảo vệ
+            {% else %}
+                {{ user_role }}
+            {% endif %}
+        </div>
+    </div>
+    <a href="#" class="logout-btn" onclick="showLogoutConfirmation(event)">
+        <i class="fas fa-sign-out-alt"></i>
+        Đăng xuất
+    </a>
+</div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-car"></i> Hệ thống đỗ xe Trường ĐH Bình Dương</h1>
+            <div class="nav-links">
+                <a href="/" class="active"><i class="fas fa-home"></i> Trang chủ</a>
+                <a href="/register"><i class="fas fa-plus-circle"></i> Đăng ký xe</a>
+                <a href="/management"><i class="fas fa-cogs"></i> Quản lý xe</a>
+                <a href="/reports"><i class="fas fa-chart-line"></i> Báo cáo</a>
+                <a href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a>
+                <a href="/download_plates"><i class="fas fa-download"></i> Tải xuống dữ liệu</a>
+            </div>
+        </div>
+
+        <!-- Camera kép -->
+        <div class="dual-camera-container">
+            <div class="camera-section">
+                <div class="camera-title">
+                    <i class="fas fa-camera"></i>Camera cổng vào
+                    <span class="status-indicator status-active" id="camera1-status"></span>
+                </div>
+                <div class="camera-frame">
+                    <img src="/video_feed" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
+                </div>
+            </div>
+
+            <div class="camera-section">
+                <div class="camera-title">
+                    <i class="fas fa-parking"></i>Camera bãi đỗ
+                    <span class="status-indicator status-active" id="camera2-status"></span>
+                </div>
+                <div class="camera-frame">
+                    <img src="/video_stream" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
+                </div>
+            </div>
+        </div>
+
+        <!-- Nút điều khiển với dropdown reset -->
+        <div class="controls">
+            <button class="btn btn-entry" onclick="captureEntry()">
+                <i class="fas fa-sign-in-alt"></i>Xe vào
+            </button>
+            <button class="btn btn-exit" onclick="captureExit()">
+                <i class="fas fa-sign-out-alt"></i>Xe ra
+            </button>
+            <!-- Dropdown cho các option reset -->
+            <div class="reset-dropdown">
+                <button class="btn btn-reset" onclick="toggleResetOptions()">
+                    <i class="fas fa-undo"></i>Đặt lại <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="reset-options" id="resetOptions">
+                    <button class="reset-option safe" onclick="showSoftResetConfirmation()">
+                        <i class="fas fa-refresh"></i>
+                        <div>
+                            <strong>Reset Giao diện</strong>
+                            <small>Không xóa dữ liệu đã lưu</small>
+                        </div>
+                    </button>
+                    <button class="reset-option danger" onclick="showHardResetConfirmation()">
+                        <i class="fas fa-trash-alt"></i>
+                        <div>
+                            <strong>Reset Toàn bộ</strong>
+                            <small>Xóa tất cả dữ liệu</small>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Khung hiển thị ảnh chụp và thông tin -->
+        <div class="capture-container">
+            <div class="capture-box">
+                <div class="capture-title">
+                    <i class="fas fa-arrow-right"></i>Xe vào
+                </div>
+                <div class="capture-image" id="entry-image"></div>
+                <div class="plate-info" id="entry-info">
+                    <strong>Biển số:</strong> <span id="entry-plate">---</span><br>
+                    <strong>Thời gian:</strong> <span id="entry-time">---</span>
+                    <div class="registration-status" id="entry-status" style="display: none;"></div>
+                </div>
+                <div class="vehicle-info" id="entry-vehicle-info">
+                    <h4><i class="fas fa-info-circle"></i> Thông tin xe đã đăng ký</h4>
+                    <div class="info-row">
+                        <span class="info-label">Chủ xe:</span>
+                        <span class="info-value" id="entry-owner">---</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Loại xe:</span>
+                        <span class="info-value" id="entry-vehicle-type">---</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số điện thoại:</span>
+                        <span class="info-value" id="entry-phone">---</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Hãng xe:</span>
+                        <span class="info-value" id="entry-brand">---</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="capture-box">
+                <div class="capture-title">
+                    <i class="fas fa-arrow-left"></i>Xe ra
+                </div>
+                <div class="capture-image" id="exit-image"></div>
+                <div class="plate-info" id="exit-info">
+                    <strong>Biển số:</strong> <span id="exit-plate">---</span><br>
+                    <strong>Thời gian:</strong> <span id="exit-time">---</span>
+                    <div class="registration-status" id="exit-status" style="display: none;"></div>
+                </div>
+                <div class="vehicle-info" id="exit-vehicle-info">
+                    <h4><i class="fas fa-info-circle"></i> Thông tin xe đã đăng ký</h4>
+                    <div class="info-row">
+                        <span class="info-label">Chủ xe:</span>
+                        <span class="info-value" id="exit-owner">---</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Loại xe:</span>
+                        <span class="info-value" id="exit-vehicle-type">---</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số điện thoại:</span>
+                        <span class="info-value" id="exit-phone">---</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Thời gian đỗ:</span>
+                        <span class="info-value" id="exit-duration">---</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thống kê lưu lượng xe -->
+        <div class="stats-container">
+            <div class="stats-title">
+                <i class="fas fa-chart-bar"></i>Thống kê lưu lượng xe
+            </div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div><i class="fas fa-car"></i> Xe trong bãi</div>
+                    <h2 id="total-cars">0</h2>
+                </div>
+                <div class="stat-box">
+                    <div><i class="fas fa-plus-circle"></i> Xe vào hôm nay</div>
+                    <h2 id="entry-today">0</h2>
+                </div>
+                <div class="stat-box">
+                    <div><i class="fas fa-minus-circle"></i> Xe ra hôm nay</div>
+                    <h2 id="exit-today">0</h2>
+                </div>
+                <div class="stat-box">
+                    <div><i class="fas fa-check-circle"></i> Xe đã đăng ký</div>
+                    <h2 id="registered-today">0</h2>
+                </div>
+                <div class="stat-box">
+                    <div><i class="fas fa-question-circle"></i> Xe chưa đăng ký</div>
+                    <h2 id="unregistered-today">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần tìm kiếm -->
+        <div class="search-container">
+            <h2><i class="fas fa-search"></i> Tìm kiếm biển số xe</h2>
+            <div class="search-box">
+                <input type="text" id="search-plate" class="search-input" placeholder="Nhập biển số xe...">
+                <button class="search-btn" onclick="searchPlate()">
+                    <i class="fas fa-search"></i>Tìm kiếm
+                </button>
+            </div>
+            <div id="search-results" class="search-results">
+                <h3><i class="fas fa-search-plus"></i> Kết quả tìm kiếm</h3>
+                <div class="result-info">
+                    <p><strong>Biển số:</strong> <span id="result-plate"></span></p>
+                    <p><strong>Thời gian vào:</strong> <span id="result-entry-time"></span></p>
+                    <p><strong>Thời gian ra:</strong> <span id="result-exit-time"></span></p>
+                    <p><strong>Trạng thái:</strong> <span id="result-registration-status"></span></p>
+                    <div id="result-owner-info" style="display: none;">
+                        <p><strong>Chủ xe:</strong> <span id="result-owner-name"></span></p>
+                        <p><strong>Số điện thoại:</strong> <span id="result-owner-phone"></span></p>
+                        <p><strong>Loại xe:</strong> <span id="result-vehicle-type"></span></p>
+                    </div>
+                </div>
+                <div>
+                    <h4><i class="fas fa-image"></i> Ảnh xe vào:</h4>
+                    <img id="result-entry-image" src="" alt="Ảnh xe vào">
+                    <h4><i class="fas fa-image"></i> Ảnh xe ra:</h4>
+                    <img id="result-exit-image" src="" alt="Ảnh xe ra">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Soft Reset Modal -->
+    <div id="softResetModal" class="reset-modal">
+        <div class="reset-modal-content soft-reset">
+            <h3>
+                <i class="fas fa-refresh"></i>
+                Reset Giao diện
+            </h3>
+            <div class="reset-modal-body">
+                <p><strong>✅ Đặt lại giao diện an toàn</strong></p>
+                <p>Hành động này sẽ:</p>
+                <ul>
+                    <li>✅ Làm sạch giao diện hiển thị</li>
+                    <li>✅ Đặt lại ảnh về trạng thái ban đầu</li>
+                    <li>✅ Reset thông tin biển số hiện tại</li>
+                    <li>✅ Tạo session mới</li>
+                    <li>✅ Xóa cache trình duyệt</li>
+                </ul>
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 10px; border-left: 4px solid #4CAF50; margin: 15px 0;">
+                    <p style="color: #2e7d32; font-weight: 600; margin: 0;">
+                        <i class="fas fa-shield-alt"></i>
+                        An toàn - Không xóa dữ liệu đã lưu trong database
+                    </p>
+                </div>
+                <p style="color: #666; font-style: italic;">
+                    Dữ liệu thống kê và lịch sử sẽ được giữ nguyên.
+                </p>
+            </div>
+            <div class="reset-modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="hideSoftResetConfirmation()">
+                    <i class="fas fa-times"></i> Hủy
+                </button>
+                <button class="modal-btn modal-btn-confirm-soft" onclick="confirmSoftReset()">
+                    <i class="fas fa-refresh"></i> Đặt lại giao diện
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hard Reset Modal -->
+    <div id="hardResetModal" class="reset-modal">
+        <div class="reset-modal-content hard-reset">
+            <h3>
+                <i class="fas fa-exclamation-triangle"></i>
+                Reset Toàn bộ hệ thống
+            </h3>
+            <div class="reset-modal-body">
+                <p><strong>⚠️ CẢNH BÁO: Reset nguy hiểm!</strong></p>
+                <p>Hành động này sẽ:</p>
+                <ul>
+                    <li><strong>❌ Xóa TẤT CẢ dữ liệu trong database</strong></li>
+                    <li><strong>❌ Xóa TẤT CẢ ảnh đã chụp</strong></li>
+                    <li><strong>❌ Xóa toàn bộ lịch sử và thống kê</strong></li>
+                    <li><strong>❌ Xóa tất cả thông tin xe đã đăng ký</strong></li>
+                </ul>
+                <div style="background: #ffebee; padding: 15px; border-radius: 10px; border-left: 4px solid #f44336; margin: 15px 0;">
+                    <p style="color: #c62828; font-weight: 700; margin: 0;">
+                        <i class="fas fa-skull-crossbones"></i>
+                        KHÔNG THỂ HOÀN TÁC!
+                    </p>
+                </div>
+            </div>
+            <div class="reset-modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="hideHardResetConfirmation()">
+                    <i class="fas fa-shield-alt"></i> Hủy an toàn
+                </button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmHardReset()">
+                    <i class="fas fa-bomb"></i> Xóa tất cả
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Modal -->
+    <div id="logoutModal" class="logout-modal">
+        <div class="logout-modal-content">
+            <h3>
+                <i class="fas fa-sign-out-alt"></i>
+                Xác nhận đăng xuất
+            </h3>
+            <p>Bạn có chắc chắn muốn đăng xuất không?</p>
+            <div class="logout-modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="hideLogoutConfirmation()">
+                    <i class="fas fa-times"></i> Hủy
+                </button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // FIXED JavaScript with proper error handling
+
+        // Object to store plate data
+        const plateData = {};
+        let totalCars = 0;
+        let entryToday = 0;
+        let exitToday = 0;
+
+        // Tạo session ID duy nhất khi khởi động ứng dụng
+        let sessionId = sessionStorage.getItem('parkingSessionId');
+        if (!sessionId) {
+            sessionId = 'session_' + new Date().getTime() + '_' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem('parkingSessionId', sessionId);
+        }
+
+        // FIXED: Safe element access function
+        function safeGetElement(id) {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.warn(`Element with id '${id}' not found`);
+                return null;
+            }
+            return element;
+        }
+
+        // FIXED: Safe element content update
+        function safeUpdateElement(id, content, property = 'textContent') {
+            const element = safeGetElement(id);
+            if (element) {
+                try {
+                    if (property === 'innerHTML') {
+                        element.innerHTML = content;
+                    } else if (property === 'style') {
+                        Object.assign(element.style, content);
+                    } else {
+                        element[property] = content;
+                    }
+                } catch (error) {
+                    console.error(`Error updating element ${id}:`, error);
+                }
+            }
+        }
+
+        // Function to create background particles
+        function createParticles() {
+            const particleContainer = document.querySelector('.bg-particles');
+            if (!particleContainer) return;
+
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 8 + 4 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 6) + 's';
+                particleContainer.appendChild(particle);
+            }
+        }
+
+        // FIXED: Function to handle entry capture
+        async function captureEntry() {
+            try {
+                const response = await fetch('/capture', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action: 'entry' })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update entry image - FIXED
+                    const entryImage = safeGetElement('entry-image');
+                    if (entryImage) {
+                        entryImage.style.backgroundImage = `url(/static/captures/${data.image})`;
+                        entryImage.style.backgroundSize = 'cover';
+                        entryImage.style.backgroundPosition = 'center';
+                    }
+
+                    // Update basic info - FIXED
+                    safeUpdateElement('entry-plate', data.plate);
+                    safeUpdateElement('entry-time', data.timestamp);
+
+                    // Update registration status - FIXED
+                    const statusElement = safeGetElement('entry-status');
+                    const vehicleInfoElement = safeGetElement('entry-vehicle-info');
+
+                    if (data.is_registered && data.vehicle_info) {
+                        if (statusElement) {
+                            statusElement.textContent = 'Xe đã đăng ký';
+                            statusElement.className = 'registration-status status-registered';
+                            statusElement.style.display = 'inline-block';
+                        }
+
+                        // Show vehicle info - FIXED
+                        const info = data.vehicle_info;
+                        safeUpdateElement('entry-owner', info.owner_name || '---');
+                        safeUpdateElement('entry-vehicle-type', info.vehicle_type || '---');
+                        safeUpdateElement('entry-phone', info.owner_phone || '---');
+                        safeUpdateElement('entry-brand', info.vehicle_brand || '---');
+
+                        if (vehicleInfoElement) {
+                            vehicleInfoElement.classList.add('show');
+                        }
+
+                        showNotification(`Xe đã đăng ký của ${info.owner_name} đã vào bãi!`, 'success');
+                    } else {
+                        if (statusElement) {
+                            statusElement.textContent = 'Xe chưa đăng ký';
+                            statusElement.className = 'registration-status status-unregistered';
+                            statusElement.style.display = 'inline-block';
+                        }
+                        if (vehicleInfoElement) {
+                            vehicleInfoElement.classList.remove('show');
+                        }
+
+                        showNotification('Xe chưa đăng ký đã vào bãi!', 'info');
+                    }
+
+                    // Update statistics if valid plate
+                    if (data.plate && data.plate !== "Không nhận diện được biển số") {
+                        plateData[data.plate] = {
+                            entryTime: data.timestamp,
+                            exitTime: null
+                        };
+                        totalCars++;
+                        entryToday++;
+                        updateStats();
+                    }
+                    saveDataToStorage();
+                    updateCurrentVehicles();
+                } else {
+                    showNotification("Lỗi: " + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Lỗi khi chụp ảnh:', error);
+                showNotification('Có lỗi xảy ra khi chụp ảnh xe vào', 'error');
+            }
+        }
+
+        // FIXED: Function to handle exit capture
+        async function captureExit() {
+            try {
+                const response = await fetch('/capture', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action: 'exit' })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update exit image - FIXED
+                    const exitImage = safeGetElement('exit-image');
+                    if (exitImage) {
+                        exitImage.style.backgroundImage = `url(/static/captures/${data.image})`;
+                        exitImage.style.backgroundSize = 'cover';
+                        exitImage.style.backgroundPosition = 'center';
+                    }
+
+                    // Update basic info - FIXED
+                    safeUpdateElement('exit-plate', data.plate);
+                    safeUpdateElement('exit-time', data.timestamp);
+
+                    // Update registration status - FIXED
+                    const statusElement = safeGetElement('exit-status');
+                    const vehicleInfoElement = safeGetElement('exit-vehicle-info');
+
+                    if (data.is_registered && data.vehicle_info) {
+                        if (statusElement) {
+                            statusElement.textContent = 'Xe đã đăng ký';
+                            statusElement.className = 'registration-status status-registered';
+                            statusElement.style.display = 'inline-block';
+                        }
+
+                        // Show vehicle info - FIXED
+                        const info = data.vehicle_info;
+                        safeUpdateElement('exit-owner', info.owner_name || '---');
+                        safeUpdateElement('exit-vehicle-type', info.vehicle_type || '---');
+                        safeUpdateElement('exit-phone', info.owner_phone || '---');
+                        safeUpdateElement('exit-duration', 'Đang tính...');
+
+                        if (vehicleInfoElement) {
+                            vehicleInfoElement.classList.add('show');
+                        }
+
+                        showNotification(`Xe của ${info.owner_name} đã ra khỏi bãi!`, 'success');
+                    } else {
+                        if (statusElement) {
+                            statusElement.textContent = 'Xe chưa đăng ký';
+                            statusElement.className = 'registration-status status-unregistered';
+                            statusElement.style.display = 'inline-block';
+                        }
+                        if (vehicleInfoElement) {
+                            vehicleInfoElement.classList.remove('show');
+                        }
+
+                        showNotification('Xe chưa đăng ký đã ra khỏi bãi!', 'info');
+                    }
+
+                    // Update statistics if valid plate and exists in entry data
+                    if (data.plate && data.plate !== "Không nhận diện được biển số" && plateData[data.plate]) {
+                        totalCars = Math.max(0, totalCars - 1);
+                        exitToday++;
+                        plateData[data.plate].exitTime = data.timestamp;
+                        updateStats();
+                    }
+                    saveDataToStorage();
+                    updateCurrentVehicles();
+                } else {
+                    showNotification("Lỗi: " + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Lỗi khi chụp ảnh:', error);
+                showNotification('Có lỗi xảy ra khi chụp ảnh xe ra', 'error');
+            }
+        }
+
+        // Function to show notifications
+        function showNotification(message, type) {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => notification.remove());
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 4000);
+        }
+
+        // FIXED: Function to update statistics display
+        function updateStats() {
+            safeUpdateElement('total-cars', totalCars);
+            safeUpdateElement('entry-today', entryToday);
+            safeUpdateElement('exit-today', exitToday);
+        }
+
+        // FIXED: Function to update statistics from server
+        async function updateStatsFromServer() {
+            try {
+                const response = await fetch('/sync_data');
+                const data = await response.json();
+
+                if (!data.error) {
+                    safeUpdateElement('total-cars', data.total_cars || 0);
+                    safeUpdateElement('entry-today', data.entry_today || 0);
+                    safeUpdateElement('exit-today', data.exit_today || 0);
+                    safeUpdateElement('registered-today', data.registered_today || 0);
+                    safeUpdateElement('unregistered-today', data.unregistered_today || 0);
+                }
+            } catch (error) {
+                console.error('Lỗi cập nhật thống kê:', error);
+            }
+        }
+
+        // FIXED: Function to update current vehicles list
+        async function updateCurrentVehicles() {
+            try {
+                const response = await fetch('/api/current_vehicles');
+                const data = await response.json();
+
+                if (data.success) {
+                    const container = safeGetElement('current-vehicles-list');
+                    if (!container) return;
+
+                    container.innerHTML = '';
+
+                    if (data.vehicles.length === 0) {
+                        container.innerHTML = '<div class="vehicle-item"><div><div class="plate">Không có xe nào trong bãi</div></div></div>';
+                        return;
+                    }
+
+                    data.vehicles.forEach(vehicle => {
+                        const vehicleItem = document.createElement('div');
+                        vehicleItem.className = 'vehicle-item';
+
+                        const ownerInfo = vehicle[2] ? `${vehicle[2]} (${vehicle[3]})` : 'Chưa đăng ký';
+                        const phone = vehicle[4] ? ` - ${vehicle[4]}` : '';
+
+                        vehicleItem.innerHTML = `
+                            <div>
+                                <div class="plate">${vehicle[0]}</div>
+                                <div class="details">${ownerInfo}${phone}</div>
+                            </div>
+                            <div class="time">${vehicle[1]}</div>
+                        `;
+
+                        container.appendChild(vehicleItem);
+                    });
+                }
+            } catch (error) {
+                console.error('Lỗi cập nhật danh sách xe:', error);
+            }
+        }
+
+        // FIXED: Function to search plate
+        async function searchPlate() {
+            const plateInput = safeGetElement('search-plate');
+            if (!plateInput) return;
+
+            const plateNumber = plateInput.value;
+            if (!plateNumber) {
+                showNotification('Vui lòng nhập biển số xe cần tìm', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/search_plate/${plateNumber}`);
+                const data = await response.json();
+
+                if (data.found) {
+                    // Show results - FIXED
+                    const searchResults = safeGetElement('search-results');
+                    if (searchResults) {
+                        searchResults.style.display = 'block';
+                    }
+
+                    safeUpdateElement('result-plate', data.plate);
+                    safeUpdateElement('result-entry-time', data.entry_time || 'Không có dữ liệu');
+                    safeUpdateElement('result-exit-time', data.exit_time || 'Không có dữ liệu');
+
+                    // Registration status - FIXED
+                    const statusElement = safeGetElement('result-registration-status');
+                    const ownerInfoElement = safeGetElement('result-owner-info');
+
+                    if (data.is_registered && data.owner_name) {
+                        if (statusElement) {
+                            statusElement.textContent = 'Xe đã đăng ký';
+                            statusElement.style.color = '#4CAF50';
+                            statusElement.style.fontWeight = 'bold';
+                        }
+
+                        // Show owner info - FIXED
+                        safeUpdateElement('result-owner-name', data.owner_name);
+                        safeUpdateElement('result-owner-phone', data.owner_phone || 'Không có');
+                        safeUpdateElement('result-vehicle-type', data.vehicle_type || 'Không có');
+
+                        if (ownerInfoElement) {
+                            ownerInfoElement.style.display = 'block';
+                        }
+                    } else {
+                        if (statusElement) {
+                            statusElement.textContent = 'Xe chưa đăng ký';
+                            statusElement.style.color = '#FF9800';
+                            statusElement.style.fontWeight = 'bold';
+                        }
+                        if (ownerInfoElement) {
+                            ownerInfoElement.style.display = 'none';
+                        }
+                    }
+
+                    // Show images - FIXED
+                    const entryImage = safeGetElement('result-entry-image');
+                    const exitImage = safeGetElement('result-exit-image');
+
+                    if (data.entry_image && entryImage) {
+                        entryImage.src = `/static/captures/${data.entry_image}`;
+                        entryImage.style.display = 'block';
+                    } else if (entryImage) {
+                        entryImage.style.display = 'none';
+                    }
+
+                    if (data.exit_image && exitImage) {
+                        exitImage.src = `/static/captures/${data.exit_image}`;
+                        exitImage.style.display = 'block';
+                    } else if (exitImage) {
+                        exitImage.style.display = 'none';
+                    }
+
+                    showNotification('Tìm thấy thông tin biển số!', 'success');
+                } else {
+                    showNotification('Không tìm thấy thông tin biển số xe này', 'error');
+                    const searchResults = safeGetElement('search-results');
+                    if (searchResults) {
+                        searchResults.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Lỗi khi tìm kiếm:', error);
+                showNotification('Có lỗi xảy ra khi tìm kiếm', 'error');
+            }
+        }
+
+        // FIXED: Function to update camera status
+        function updateCameraStatus() {
+            const camera1Status = safeGetElement('camera1-status');
+            const camera2Status = safeGetElement('camera2-status');
+
+            if (camera1Status) camera1Status.className = 'status-indicator status-active';
+            if (camera2Status) camera2Status.className = 'status-indicator status-active';
+        }
+
+        // FIXED: Storage functions
+        function saveDataToStorage() {
+            try {
+                const entryImage = safeGetElement('entry-image');
+                const exitImage = safeGetElement('exit-image');
+
+                const data = {
+                    sessionId: sessionId,
+                    plateData: plateData,
+                    totalCars: totalCars,
+                    entryToday: entryToday,
+                    exitToday: exitToday,
+                    lastEntryImage: entryImage ? entryImage.style.backgroundImage : '',
+                    lastExitImage: exitImage ? exitImage.style.backgroundImage : '',
+                    lastEntryPlate: safeGetElement('entry-plate')?.textContent || '---',
+                    lastExitPlate: safeGetElement('exit-plate')?.textContent || '---',
+                    lastEntryTime: safeGetElement('entry-time')?.textContent || '---',
+                    lastExitTime: safeGetElement('exit-time')?.textContent || '---',
+                    timestamp: new Date().getTime()
+                };
+
+                localStorage.setItem('parkingSystemData_' + sessionId, JSON.stringify(data));
+                localStorage.setItem('currentParkingSession', sessionId);
+            } catch (error) {
+                console.error('Error saving data to storage:', error);
+            }
+        }
+
+        function loadDataFromStorage() {
+            try {
+                const currentSession = localStorage.getItem('currentParkingSession');
+
+                if (currentSession && currentSession === sessionId) {
+                    const savedData = localStorage.getItem('parkingSystemData_' + sessionId);
+
+                    if (savedData) {
+                        const data = JSON.parse(savedData);
+
+                        if (data.sessionId === sessionId) {
+                            Object.assign(plateData, data.plateData || {});
+                            totalCars = data.totalCars || 0;
+                            entryToday = data.entryToday || 0;
+                            exitToday = data.exitToday || 0;
+
+                            // FIXED: Safe restoration of images
+                            if (data.lastEntryImage) {
+                                const entryImage = safeGetElement('entry-image');
+                                if (entryImage) {
+                                    entryImage.style.backgroundImage = data.lastEntryImage;
+                                }
+                            }
+                            if (data.lastExitImage) {
+                                const exitImage = safeGetElement('exit-image');
+                                if (exitImage) {
+                                    exitImage.style.backgroundImage = data.lastExitImage;
+                                }
+                            }
+
+                            // FIXED: Safe restoration of text content
+                            safeUpdateElement('entry-plate', data.lastEntryPlate || '---');
+                            safeUpdateElement('exit-plate', data.lastExitPlate || '---');
+                            safeUpdateElement('entry-time', data.lastEntryTime || '---');
+                            safeUpdateElement('exit-time', data.lastExitTime || '---');
+
+                            updateStats();
+                            console.log('Đã khôi phục dữ liệu từ session:', sessionId);
+                        }
+                    }
+                } else {
+                    cleanupOldSessions();
+                    console.log('Khởi tạo session mới:', sessionId);
+                }
+            } catch (error) {
+                console.error('Error loading data from storage:', error);
+            }
+        }
+
+        function cleanupOldSessions() {
+            try {
+                const keys = Object.keys(localStorage);
+                keys.forEach(key => {
+                    if (key.startsWith('parkingSystemData_')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+            } catch (error) {
+                console.error('Error cleaning up old sessions:', error);
+            }
+        }
+
+        // Sync between tabs
+        function syncBetweenTabs() {
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'currentParkingSession' && e.newValue !== sessionId) {
+                    sessionId = e.newValue;
+                    sessionStorage.setItem('parkingSessionId', sessionId);
+                    loadDataFromStorage();
+                }
+
+                if (e.key === 'parkingSystemData_' + sessionId) {
+                    loadDataFromStorage();
+                }
+            });
+        }
+
+        // Reset dropdown functions
+        function toggleResetOptions() {
+            const options = safeGetElement('resetOptions');
+            if (options) {
+                options.classList.toggle('show');
+
+                // Đóng khi click outside
+                document.addEventListener('click', function closeOptions(e) {
+                    if (!e.target.closest('.reset-dropdown')) {
+                        options.classList.remove('show');
+                        document.removeEventListener('click', closeOptions);
+                    }
+                });
+            }
+        }
+
+        // Soft Reset functions
+        function showSoftResetConfirmation() {
+            const resetOptions = safeGetElement('resetOptions');
+            const softModal = safeGetElement('softResetModal');
+
+            if (resetOptions) resetOptions.classList.remove('show');
+            if (softModal) {
+                softModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function hideSoftResetConfirmation() {
+            const softModal = safeGetElement('softResetModal');
+            if (softModal) {
+                softModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        async function confirmSoftReset() {
+            hideSoftResetConfirmation();
+
+            const resetBtn = document.querySelector('.btn-reset');
+            const originalContent = resetBtn ? resetBtn.innerHTML : '';
+
+            if (resetBtn) {
+                resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Đang reset...';
+                resetBtn.disabled = true;
+            }
+
+            try {
+                // 1. Gọi API soft reset
+                const response = await fetch('/api/reset_session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // 2. Reset frontend UI (không ảnh hưởng database)
+
+                    // Reset ảnh hiển thị - FIXED
+                    const entryImage = safeGetElement('entry-image');
+                    const exitImage = safeGetElement('exit-image');
+                    if (entryImage) {
+                        entryImage.style.backgroundImage = '';
+                        entryImage.style.background = 'linear-gradient(45deg, #f0f0f0, #e0e0e0)';
+                    }
+                    if (exitImage) {
+                        exitImage.style.backgroundImage = '';
+                        exitImage.style.background = 'linear-gradient(45deg, #f0f0f0, #e0e0e0)';
+                    }
+
+                    // Reset thông tin hiển thị - FIXED
+                    safeUpdateElement('entry-plate', '---');
+                    safeUpdateElement('exit-plate', '---');
+                    safeUpdateElement('entry-time', '---');
+                    safeUpdateElement('exit-time', '---');
+
+                    // Ẩn thông tin xe - FIXED
+                    const entryVehicleInfo = safeGetElement('entry-vehicle-info');
+                    const exitVehicleInfo = safeGetElement('exit-vehicle-info');
+                    const entryStatus = safeGetElement('entry-status');
+                    const exitStatus = safeGetElement('exit-status');
+
+                    if (entryVehicleInfo) entryVehicleInfo.classList.remove('show');
+                    if (exitVehicleInfo) exitVehicleInfo.classList.remove('show');
+                    if (entryStatus) entryStatus.style.display = 'none';
+                    if (exitStatus) exitStatus.style.display = 'none';
+
+                    // Reset variables frontend (không ảnh hưởng DB)
+                    Object.keys(plateData).forEach(key => delete plateData[key]);
+                    totalCars = 0;
+                    entryToday = 0;
+                    exitToday = 0;
+
+                    // Reset search - FIXED
+                    const searchInput = safeGetElement('search-plate');
+                    if (searchInput) searchInput.value = '';
+                    const searchResults = safeGetElement('search-results');
+                    if (searchResults) searchResults.style.display = 'none';
+
+                    // Clear browser storage
+                    sessionStorage.clear();
+                    localStorage.clear();
+
+                    // Tạo session mới
+                    sessionId = result.new_session_id;
+                    sessionStorage.setItem('parkingSessionId', sessionId);
+
+                    // Refresh từ server (dữ liệu thật từ DB)
+                    await updateStatsFromServer();
+                    await updateCurrentVehicles();
+
+                    showNotification('Đã reset giao diện thành công! Dữ liệu được giữ nguyên.', 'success');
+
+                } else {
+                    showNotification(`Lỗi: ${result.error}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Lỗi soft reset:', error);
+                showNotification('Có lỗi xảy ra khi reset giao diện', 'error');
+            } finally {
+                if (resetBtn) {
+                    resetBtn.innerHTML = originalContent;
+                    resetBtn.disabled = false;
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Hard Reset functions
+        function showHardResetConfirmation() {
+            const resetOptions = safeGetElement('resetOptions');
+            const hardModal = safeGetElement('hardResetModal');
+
+            if (resetOptions) resetOptions.classList.remove('show');
+            if (hardModal) {
+                hardModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function hideHardResetConfirmation() {
+            const hardModal = safeGetElement('hardResetModal');
+            if (hardModal) {
+                hardModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        async function confirmHardReset() {
+            hideHardResetConfirmation();
+
+            const resetBtn = document.querySelector('.btn-reset');
+            const originalContent = resetBtn ? resetBtn.innerHTML : '';
+
+            if (resetBtn) {
+                resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Đang xóa tất cả...';
+                resetBtn.disabled = true;
+            }
+
+            try {
+                // Gọi API reset toàn bộ hệ thống
+                const response = await fetch('/api/reset_system', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        confirm_code: 'RESET_PARKING_SYSTEM_2024'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Reset toàn bộ frontend - FIXED
+
+                    // Reset ảnh
+                    const entryImage = safeGetElement('entry-image');
+                    const exitImage = safeGetElement('exit-image');
+                    if (entryImage) {
+                        entryImage.style.backgroundImage = '';
+                        entryImage.style.background = 'linear-gradient(45deg, #f0f0f0, #e0e0e0)';
+                    }
+                    if (exitImage) {
+                        exitImage.style.backgroundImage = '';
+                        exitImage.style.background = 'linear-gradient(45deg, #f0f0f0, #e0e0e0)';
+                    }
+
+                    // Reset thông tin - FIXED
+                    safeUpdateElement('entry-plate', '---');
+                    safeUpdateElement('exit-plate', '---');
+                    safeUpdateElement('entry-time', '---');
+                    safeUpdateElement('exit-time', '---');
+
+                    // Ẩn thông tin xe - FIXED
+                    const entryVehicleInfo = safeGetElement('entry-vehicle-info');
+                    const exitVehicleInfo = safeGetElement('exit-vehicle-info');
+                    const entryStatus = safeGetElement('entry-status');
+                    const exitStatus = safeGetElement('exit-status');
+
+                    if (entryVehicleInfo) entryVehicleInfo.classList.remove('show');
+                    if (exitVehicleInfo) exitVehicleInfo.classList.remove('show');
+                    if (entryStatus) entryStatus.style.display = 'none';
+                    if (exitStatus) exitStatus.style.display = 'none';
+
+                    // Reset thống kê - FIXED
+                    totalCars = 0;
+                    entryToday = 0;
+                    exitToday = 0;
+
+                    safeUpdateElement('total-cars', '0');
+                    safeUpdateElement('entry-today', '0');
+                    safeUpdateElement('exit-today', '0');
+                    safeUpdateElement('registered-today', '0');
+                    safeUpdateElement('unregistered-today', '0');
+
+                    // Xóa dữ liệu
+                    Object.keys(plateData).forEach(key => delete plateData[key]);
+
+                    // Reset tìm kiếm - FIXED
+                    const searchInput = safeGetElement('search-plate');
+                    if (searchInput) searchInput.value = '';
+                    const searchResults = safeGetElement('search-results');
+                    if (searchResults) searchResults.style.display = 'none';
+
+                    // Clear storage
+                    sessionStorage.clear();
+                    localStorage.clear();
+
+                    // Tạo session mới
+                    sessionId = 'session_' + new Date().getTime() + '_' + Math.random().toString(36).substr(2, 9);
+                    sessionStorage.setItem('parkingSessionId', sessionId);
+
+                    showNotification('Đã xóa toàn bộ hệ thống thành công!', 'success');
+
+                } else {
+                    showNotification(`Lỗi reset server: ${result.error}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Lỗi hard reset:', error);
+                showNotification('Có lỗi xảy ra khi reset hệ thống', 'error');
+            } finally {
+                if (resetBtn) {
+                    resetBtn.innerHTML = originalContent;
+                    resetBtn.disabled = false;
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Logout functions
+        function showLogoutConfirmation(event) {
+            event.preventDefault();
+            const logoutModal = safeGetElement('logoutModal');
+            if (logoutModal) {
+                logoutModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function hideLogoutConfirmation() {
+            const logoutModal = safeGetElement('logoutModal');
+            if (logoutModal) {
+                logoutModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function confirmLogout() {
+            // Show loading state
+            const confirmBtn = document.querySelector('.modal-btn-confirm');
+            const originalContent = confirmBtn ? confirmBtn.innerHTML : '';
+
+            if (confirmBtn) {
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng xuất...';
+                confirmBtn.disabled = true;
+            }
+
+            // Clear local data
+            sessionStorage.clear();
+            localStorage.clear();
+
+            // Redirect to logout
+            setTimeout(() => {
+                window.location.href = '/logout';
+            }, 1000);
+        }
+
+        // FIXED: Initialize page
+        window.addEventListener('load', function() {
+            try {
+                createParticles();
+                loadDataFromStorage();
+                updateStatsFromServer();
+                updateCurrentVehicles();
+                updateCameraStatus();
+                syncBetweenTabs();
+
+                // Auto-refresh every 30 seconds
+                setInterval(() => {
+                    updateStatsFromServer();
+                    updateCurrentVehicles();
+                }, 30000);
+
+                // Auto-refresh camera status every 5 seconds
+                setInterval(updateCameraStatus, 5000);
+
+                console.log('Parking system initialized successfully');
+            } catch (error) {
+                console.error('Error during initialization:', error);
+            }
+        });
+
+        // FIXED: Save data before unload
+        window.addEventListener('beforeunload', function() {
+            try {
+                saveDataToStorage();
+            } catch (error) {
+                console.error('Error saving data before unload:', error);
+            }
+        });
+
+        // FIXED: Focus event handler
+        window.addEventListener('focus', function() {
+            try {
+                const currentStoredSession = localStorage.getItem('currentParkingSession');
+                if (currentStoredSession && currentStoredSession !== sessionId) {
+                    sessionId = currentStoredSession;
+                    sessionStorage.setItem('parkingSessionId', sessionId);
+                    loadDataFromStorage();
+                }
+            } catch (error) {
+                console.error('Error during focus event:', error);
+            }
+        });
+
+        // FIXED: Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            try {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    captureEntry();
+                } else if (e.ctrlKey && e.key === 'Backspace') {
+                    captureExit();
+                } else if (e.key === 'Escape') {
+                    hideSoftResetConfirmation();
+                    hideHardResetConfirmation();
+                    hideLogoutConfirmation();
+                    const resetOptions = safeGetElement('resetOptions');
+                    if (resetOptions) resetOptions.classList.remove('show');
+                } else if (e.ctrlKey && e.key === 'l') {
+                    e.preventDefault();
+                    showLogoutConfirmation(e);
+                } else if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+                    e.preventDefault();
+                    toggleResetOptions();
+                }
+            } catch (error) {
+                console.error('Error in keyboard event:', error);
+            }
+        });
+
+        // FIXED: Add Enter key support for search
+        const searchInput = safeGetElement('search-plate');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchPlate();
+                }
+            });
+        }
+
+        // FIXED: Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            try {
+                const softModal = safeGetElement('softResetModal');
+                const hardModal = safeGetElement('hardResetModal');
+                const logoutModal = safeGetElement('logoutModal');
+
+                if (event.target === softModal) {
+                    hideSoftResetConfirmation();
+                }
+                if (event.target === hardModal) {
+                    hideHardResetConfirmation();
+                }
+                if (event.target === logoutModal) {
+                    hideLogoutConfirmation();
+                }
+            } catch (error) {
+                console.error('Error in window click event:', error);
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            try {
+                if (!event.target.closest('.reset-dropdown')) {
+                    const resetOptions = safeGetElement('resetOptions');
+                    if (resetOptions) resetOptions.classList.remove('show');
+                }
+            } catch (error) {
+                console.error('Error closing dropdown:', error);
+            }
+        });
+
+        console.log('Parking System JavaScript loaded successfully with error handling');
+
+
+        // ========================================
+// PHÂN QUYỀN CHO BẢO VỆ VÀ ADMIN
+// ========================================
+
+// Function kiểm tra vai trò người dùng
+function checkUserRole() {
+    // Lấy thông tin role từ element
+    const userRoleElement = document.querySelector('.user-role');
+    const isAdmin = userRoleElement && userRoleElement.classList.contains('admin');
+    const isGuard = userRoleElement && userRoleElement.classList.contains('guard');
+
+    console.log('User role detected:', isAdmin ? 'Admin' : isGuard ? 'Guard' : 'Unknown');
+
+    // Nếu là Bảo vệ, áp dụng các hạn chế
+    if (isGuard) {
+        setupGuardRestrictions();
+    }
+}
+
+// Setup các hạn chế cho Bảo vệ
+function setupGuardRestrictions() {
+    console.log('Setting up guard restrictions...');
+
+    // 1. XỬ LÝ CÁC LINK ADMIN-ONLY
+    const restrictedPaths = {
+        '/register': 'Đăng ký xe',
+        '/management': 'Quản lý xe',
+        '/reports': 'Báo cáo',
+        '/users': 'Quản lý người dùng',
+        '/download_plates': 'Tải xuống dữ liệu'
+    };
+
+    // Tìm tất cả các link bị hạn chế
+    Object.keys(restrictedPaths).forEach(path => {
+        const links = document.querySelectorAll(`a[href="${path}"]`);
+        links.forEach(link => {
+            // Thêm class để style
+            link.classList.add('restricted-for-guard');
+
+            // Thay đổi style
+            link.style.opacity = '0.6';
+            link.style.cursor = 'not-allowed';
+            link.style.position = 'relative';
+
+            // Thêm badge "Admin Only"
+            if (!link.querySelector('.admin-badge')) {
+                const badge = document.createElement('span');
+                badge.className = 'admin-badge';
+                badge.style.cssText = `
+                    background: rgba(255, 152, 0, 0.3);
+                    color: #fff;
+                    padding: 2px 6px;
+                    border-radius: 8px;
+                    font-size: 0.7rem;
+                    margin-left: 5px;
+                    border: 1px solid rgba(255, 152, 0, 0.5);
+                `;
+                badge.textContent = 'Admin';
+                link.appendChild(badge);
+            }
+
+            // Xóa href và thêm event listener
+            link.dataset.originalHref = link.href;
+            link.href = '#';
+
+            // Thêm click handler
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const featureName = restrictedPaths[path];
+
+                // Hiển thị thông báo lỗi
+                showGuardWarning(featureName);
+
+                // Thêm hiệu ứng shake
+                this.classList.add('shake-animation');
+                setTimeout(() => {
+                    this.classList.remove('shake-animation');
+                }, 600);
+
+                return false;
+            });
+        });
+    });
+
+    // 2. ẨN NÚT RESET CHO BẢO VỆ
+    const resetDropdown = document.querySelector('.reset-dropdown');
+    if (resetDropdown) {
+        resetDropdown.style.display = 'none';
+        console.log('Reset button hidden for guard');
+    }
+
+    // 3. HIỂN THỊ THÔNG BÁO CHÀO MỪNG BẢO VỆ
+    setTimeout(() => {
+        showNotification('👋 Chào mừng Bảo vệ! Bạn có thể chụp ảnh xe ra/vào và xem thông tin.', 'info');
+    }, 1000);
+}
+
+// Function hiển thị cảnh báo cho Bảo vệ
+function showGuardWarning(featureName) {
+    const messages = [
+        `⚠️ Chức năng "${featureName}" chỉ dành cho Quản trị viên!`,
+        `🚫 Bảo vệ không có quyền truy cập "${featureName}"`,
+        `❌ Vui lòng liên hệ Admin để sử dụng chức năng "${featureName}"`
+    ];
+
+    // Chọn ngẫu nhiên một message
+    const message = messages[Math.floor(Math.random() * messages.length)];
+
+    showNotification(message, 'error');
+}
+
+// Function hiển thị thông báo (cải tiến)
+function showNotification(message, type) {
+    // Xóa thông báo cũ
+    const oldNotifications = document.querySelectorAll('.notification');
+    oldNotifications.forEach(n => n.remove());
+
+    // Tạo thông báo mới
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+
+    // Style cho notification
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 10px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        animation: slideInRight 0.5s ease-out;
+        min-width: 300px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    `;
+
+    // Màu sắc theo type
+    const colors = {
+        'success': 'linear-gradient(135deg, #4CAF50, #45a049)',
+        'error': 'linear-gradient(135deg, #f44336, #d32f2f)',
+        'info': 'linear-gradient(135deg, #2196F3, #1976D2)',
+        'warning': 'linear-gradient(135deg, #FF9800, #F57C00)'
+    };
+
+    notification.style.background = colors[type] || colors['info'];
+
+    // Icon theo type
+    const icons = {
+        'success': '✅',
+        'error': '❌',
+        'info': 'ℹ️',
+        'warning': '⚠️'
+    };
+
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.2rem;">${icons[type] || ''}</span>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Tự động ẩn sau 5 giây
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.5s ease-out';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 500);
+    }, 5000);
+}
+
+// ========================================
+// CSS ANIMATIONS (thêm vào phần <style>)
+// ========================================
+const animationStyles = `
+    <style>
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+
+    .shake-animation {
+        animation: shake 0.6s ease-in-out;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+
+    .restricted-for-guard {
+        border-style: dashed !important;
+        background: rgba(255,255,255,0.05) !important;
+    }
+
+    .restricted-for-guard:hover {
+        transform: none !important;
+        background: rgba(255,255,255,0.08) !important;
+        box-shadow: 0 5px 15px rgba(255,152,0,0.2) !important;
+    }
+    </style>
+`;
+
+// Thêm styles vào head
+document.head.insertAdjacentHTML('beforeend', animationStyles);
+
+// ========================================
+// KHỞI ĐỘNG KHI PAGE LOAD
+// ========================================
+window.addEventListener('load', function() {
+    console.log('Page loaded, initializing role-based access...');
+
+    // Kiểm tra vai trò và setup
+    checkUserRole();
+
+    // Các function khác của bạn...
+    createParticles();
+    loadDataFromStorage();
+    updateStatsFromServer();
+    updateCurrentVehicles();
+    updateCameraStatus();
+    syncBetweenTabs();
+
+    // Auto-refresh
+    setInterval(() => {
+        updateStatsFromServer();
+        updateCurrentVehicles();
+    }, 30000);
+
+    setInterval(updateCameraStatus, 5000);
+});
+
+// ========================================
+// OVERRIDE CÁC FUNCTION CŨ NẾU CẦN
+// ========================================
+
+// Override function reset cho Bảo vệ
+const originalToggleReset = window.toggleResetOptions;
+window.toggleResetOptions = function() {
+    const userRole = document.querySelector('.user-role');
+    if (userRole && userRole.classList.contains('guard')) {
+        showNotification('❌ Bảo vệ không có quyền Reset hệ thống!', 'error');
+        return false;
+    }
+    if (originalToggleReset) {
+        originalToggleReset();
+    }
+};
+
+// ========================================
+// LOG VÀ DEBUG
+// ========================================
+console.log('Guard/Admin permission system loaded successfully!');
+
+
+        // ========================================
+// COMPLETE ROLE-BASED UI CONTROL
+// ========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Lấy role từ DOM element
+    const userRoleElement = document.querySelector('.user-role');
+    let userRole = 'guest';
+
+    if (userRoleElement) {
+        if (userRoleElement.classList.contains('admin')) {
+            userRole = 'admin';
+        } else if (userRoleElement.classList.contains('guard')) {
+            userRole = 'guard';
+        }
+    }
+
+    console.log('Detected user role:', userRole);
+
+    // Nếu là bảo vệ, ẩn các chức năng admin
+    if (userRole === 'guard') {
+        // CẬP NHẬT: Cho phép bảo vệ thấy link Đăng ký xe
+        const navLinks = document.querySelector('.nav-links');
+        if (navLinks) {
+            // Các link bảo vệ ĐƯỢC phép thấy
+            const allowedHrefs = [
+                '/',
+                '/register',
+                '/download_plates'
+            ];
+
+            const allLinks = navLinks.querySelectorAll('a');
+            allLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!allowedHrefs.includes(href)) {
+                    link.style.display = 'none';
+                }
+            });
+        }
+
+        // 2. ẨN NÚT RESET HOÀN TOÀN
+        const resetDropdown = document.querySelector('.reset-dropdown');
+        if (resetDropdown) {
+            resetDropdown.style.display = 'none';
+        }
+
+        // 3. VÔ HIỆU HÓA CÁC NÚT KHÔNG ĐƯỢC PHÉP (nếu có)
+        const restrictedButtons = document.querySelectorAll('.btn-reset');
+        restrictedButtons.forEach(btn => {
+            btn.style.display = 'none';
+        });
+
+        // 4. HIỂN THỊ THÔNG BÁO WELCOME
+        setTimeout(() => {
+            const userName = document.querySelector('.user-name')?.textContent || 'Bảo vệ';
+            showNotification(`👋 Chào mừng ${userName}! Bạn có quyền chụp ảnh xe ra/vào và xem thông tin.`, 'info');
+        }, 500);
+
+        // 5. LOG ACTIVITY
+        console.log('Guard restrictions applied successfully');
+    } else if (userRole === 'admin') {
+        // Admin thấy tất cả - không cần làm gì
+        console.log('Admin has full access');
+    }
+});
+
+// Override các function có thể gây conflict cho Guard
+if (document.querySelector('.user-role.guard')) {
+    // Override reset functions
+    window.toggleResetOptions = function() {
+        showNotification('❌ Bảo vệ không có quyền sử dụng chức năng này!', 'error');
+        return false;
+    };
+
+    window.showSoftResetConfirmation = function() {
+        showNotification('❌ Bảo vệ không có quyền reset hệ thống!', 'error');
+        return false;
+    };
+
+    window.showHardResetConfirmation = function() {
+        showNotification('❌ Bảo vệ không có quyền reset hệ thống!', 'error');
+        return false;
+    };
+}
+
+
+
+
+
+        // ========================================
+// KIỂM TRA VÀ ẨN CHỨC NĂNG THEO VAI TRÒ
+// ========================================
+
+function checkUserRoleAndHideFeatures() {
+    // Lấy thông tin role từ server (được inject từ Flask)
+    const userRole = '{{ user_role }}';
+    const isGuard = userRole === 'guard';
+    const isAdmin = userRole === 'admin';
+
+    console.log('Current user role:', userRole);
+
+    if (isGuard) {
+        // ẨN CÁC LINK ADMIN-ONLY TRONG NAV
+        const adminOnlyLinks = [
+            'a[href="/register"]',
+            'a[href="/management"]',
+            'a[href="/reports"]',
+            'a[href="/users"]'
+        ];
+
+        adminOnlyLinks.forEach(selector => {
+            const links = document.querySelectorAll(selector);
+            links.forEach(link => {
+                // Ẩn hoàn toàn link
+                link.style.display = 'none';
+            });
+        });
+
+        // ẨN NÚT RESET
+        const resetDropdown = document.querySelector('.reset-dropdown');
+        if (resetDropdown) {
+            resetDropdown.style.display = 'none';
+        }
+
+        // HIỂN THỊ THÔNG BÁO CHO BẢO VỆ
+        setTimeout(() => {
+            showNotification('👋 Chào mừng Bảo vệ! Bạn có thể chụp ảnh xe và xem thông tin.', 'info');
+        }, 1000);
+    }
+}
+
+// Gọi khi page load
+window.addEventListener('DOMContentLoaded', function() {
+    checkUserRoleAndHideFeatures();
+});
+
+
+
+
+        // Illegal Parking Notification System
+class IllegalParkingNotificationSystem {
+    constructor() {
+        this.notifications = new Map();
+        this.container = document.getElementById('illegal-parking-container');
+        this.alertBanner = document.getElementById('illegal-parking-alert-banner');
+        this.soundIndicator = document.getElementById('sound-indicator');
+        this.audioContext = null;
+        this.soundEnabled = true;
+
+        // Initialize WebSocket listeners
+        this.initializeWebSocketListeners();
+
+        // Initialize audio
+        this.initializeAudio();
+    }
+
+    initializeAudio() {
+        // Tạo audio context khi user click lần đầu
+        document.addEventListener('click', () => {
+            if (!this.audioContext) {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }, { once: true });
+    }
+
+    playWarningSound(severity = 'warning') {
+        if (!this.soundEnabled || !this.audioContext) return;
+
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            if (severity === 'violation') {
+                // Âm thanh cảnh báo mạnh cho vi phạm
+                oscillator.frequency.value = 800;
+                gainNode.gain.value = 0.3;
+                oscillator.type = 'square';
+
+                // Beep pattern
+                const beepPattern = [0, 0.1, 0.2, 0.3, 0.4, 0.5];
+                beepPattern.forEach((time, i) => {
+                    if (i % 2 === 0) {
+                        gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime + time);
+                    } else {
+                        gainNode.gain.setValueAtTime(0, this.audioContext.currentTime + time);
+                    }
+                });
+            } else {
+                // Âm thanh nhẹ cho cảnh báo
+                oscillator.frequency.value = 600;
+                gainNode.gain.value = 0.2;
+                oscillator.type = 'sine';
+            }
+
+            oscillator.start();
+            oscillator.stop(this.audioContext.currentTime + 0.5);
+
+            // Show sound indicator
+            this.showSoundIndicator();
+
+        } catch (error) {
+            console.error('Error playing sound:', error);
+        }
+    }
+
+    showSoundIndicator() {
+        this.soundIndicator.classList.add('show');
+        setTimeout(() => {
+            this.soundIndicator.classList.remove('show');
+        }, 2000);
+    }
+
+    initializeWebSocketListeners() {
+        // Listen for illegal parking notifications via WebSocket
+        if (typeof io !== 'undefined' && window.socket) {
+            window.socket.on('illegal_parking_notification', (data) => {
+                this.handleNotification(data);
+            });
+        }
+
+        // Also listen for regular notifications
+        window.addEventListener('illegal_parking_event', (event) => {
+            this.handleNotification(event.detail);
+        });
+    }
+
+    handleNotification(data) {
+        console.log('Received illegal parking notification:', data);
+
+        const { type, vehicle_id, message, severity, duration, position } = data;
+
+        switch (type) {
+            case 'illegal_parking_warning':
+                this.showWarning(data);
+                break;
+            case 'illegal_parking_violation':
+                this.showViolation(data);
+                break;
+            case 'illegal_parking_cleared':
+                this.clearViolation(vehicle_id);
+                break;
+        }
+    }
+
+    showWarning(data) {
+        const { vehicle_id, duration, message } = data;
+
+        // Tạo notification element
+        const notif = this.createNotificationElement({
+            id: `warning_${vehicle_id}`,
+            title: '⚠️ Cảnh báo đỗ xe',
+            message: message,
+            severity: 'warning',
+            details: {
+                'Mã xe': `#${vehicle_id}`,
+                'Thời gian dừng': `${duration} giây`,
+                'Trạng thái': 'Sắp vi phạm'
+            },
+            timer: duration
+        });
+
+        // Add to container
+        this.container.appendChild(notif);
+        this.notifications.set(vehicle_id, notif);
+
+        // Play warning sound
+        this.playWarningSound('warning');
+
+        // Auto remove after 30 seconds
+        setTimeout(() => {
+            if (!notif.classList.contains('violation')) {
+                this.removeNotification(vehicle_id);
+            }
+        }, 30000);
+    }
+
+    showViolation(data) {
+        const { vehicle_id, duration, message } = data;
+
+        // Remove warning if exists
+        this.removeNotification(vehicle_id);
+
+        // Create violation notification
+        const notif = this.createNotificationElement({
+            id: `violation_${vehicle_id}`,
+            title: '🚨 VI PHẠM ĐỖ XE',
+            message: message,
+            severity: 'violation',
+            details: {
+                'Mã xe': `#${vehicle_id}`,
+                'Thời gian vi phạm': `${duration} giây`,
+                'Trạng thái': 'ĐANG VI PHẠM'
+            },
+            timer: duration
+        });
+
+        // Add to container
+        this.container.appendChild(notif);
+        this.notifications.set(vehicle_id, notif);
+
+        // Show alert banner
+        this.showAlertBanner();
+
+        // Play violation sound
+        this.playWarningSound('violation');
+
+        // Start timer update
+        this.startTimerUpdate(vehicle_id, duration);
+    }
+
+    clearViolation(vehicle_id) {
+        // Remove violation notification
+        const notif = this.notifications.get(vehicle_id);
+        if (notif) {
+            // Change to cleared state
+            notif.className = 'illegal-parking-notification cleared';
+            const header = notif.querySelector('.illegal-parking-header');
+            if (header) {
+                header.innerHTML = '✅ Vi phạm đã được xóa';
+            }
+
+            // Remove after 5 seconds
+            setTimeout(() => {
+                this.removeNotification(vehicle_id);
+            }, 5000);
+        }
+
+        // Hide alert banner if no more violations
+        if (this.notifications.size <= 1) {
+            this.hideAlertBanner();
+        }
+    }
+
+    createNotificationElement(config) {
+        const { id, title, message, severity, details, timer } = config;
+
+        const notif = document.createElement('div');
+        notif.className = `illegal-parking-notification ${severity}`;
+        notif.id = id;
+
+        const detailsHtml = Object.entries(details || {})
+            .map(([label, value]) => `
+                <div class="illegal-parking-info-row">
+                    <span class="illegal-parking-info-label">${label}:</span>
+                    <span class="illegal-parking-info-value">${value}</span>
+                </div>
+            `).join('');
+
+        notif.innerHTML = `
+            <div class="illegal-parking-header">
+                <span>${title}</span>
+                <button class="close-notification" onclick="illegalParkingSystem.removeNotification('${id}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="illegal-parking-body">
+                <div class="illegal-parking-info">
+                    ${detailsHtml}
+                </div>
+                ${timer ? `<div class="illegal-parking-timer" data-timer="${timer}">${this.formatTime(timer)}</div>` : ''}
+            </div>
+        `;
+
+        return notif;
+    }
+
+    startTimerUpdate(vehicle_id, initialDuration) {
+        const notif = this.notifications.get(vehicle_id);
+        if (!notif) return;
+
+        let duration = initialDuration;
+        const timerElement = notif.querySelector('.illegal-parking-timer');
+
+        const interval = setInterval(() => {
+            duration++;
+            if (timerElement) {
+                timerElement.textContent = this.formatTime(duration);
+                timerElement.dataset.timer = duration;
+
+                // Flash effect every 10 seconds
+                if (duration % 10 === 0) {
+                    notif.style.animation = 'shake 0.5s ease-in-out';
+                    setTimeout(() => {
+                        notif.style.animation = '';
+                    }, 500);
+                }
+            }
+
+            // Check if notification still exists
+            if (!this.notifications.has(vehicle_id)) {
+                clearInterval(interval);
+            }
+        }, 1000);
+    }
+
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    removeNotification(id) {
+        const notif = this.notifications.get(id);
+        if (notif) {
+            notif.style.animation = 'slideOutRight 0.5s ease-out';
+            setTimeout(() => {
+                if (notif.parentNode) {
+                    notif.parentNode.removeChild(notif);
+                }
+                this.notifications.delete(id);
+
+                // Hide alert banner if no violations
+                const hasViolations = Array.from(this.notifications.values())
+                    .some(n => n.classList.contains('violation'));
+                if (!hasViolations) {
+                    this.hideAlertBanner();
+                }
+            }, 500);
+        }
+    }
+
+    showAlertBanner() {
+        this.alertBanner.classList.add('show');
+        const count = Array.from(this.notifications.values())
+            .filter(n => n.classList.contains('violation')).length;
+        document.getElementById('alert-banner-text').textContent =
+            `⚠️ CẢNH BÁO: ${count} XE ĐANG VI PHẠM ĐỖ XE!`;
+    }
+
+    hideAlertBanner() {
+        this.alertBanner.classList.remove('show');
+    }
+
+    toggleSound() {
+        this.soundEnabled = !this.soundEnabled;
+        console.log('Sound notifications:', this.soundEnabled ? 'ON' : 'OFF');
+    }
+}
+
+// Initialize system when page loads
+let illegalParkingSystem;
+
+document.addEventListener('DOMContentLoaded', function() {
+    illegalParkingSystem = new IllegalParkingNotificationSystem();
+
+    // Test notification after 3 seconds (for demo)
+    setTimeout(() => {
+        console.log('Testing illegal parking notification system...');
+        illegalParkingSystem.handleNotification({
+            type: 'illegal_parking_warning',
+            vehicle_id: 'TEST_001',
+            message: 'Xe TEST_001 đã dừng 45 giây - Sắp vi phạm!',
+            severity: 'warning',
+            duration: 45
+        });
+    }, 3000);
+
+    // Test violation after 8 seconds (for demo)
+    setTimeout(() => {
+        illegalParkingSystem.handleNotification({
+            type: 'illegal_parking_violation',
+            vehicle_id: 'TEST_001',
+            message: 'Xe TEST_001 đã vi phạm đỗ xe (60 giây)',
+            severity: 'violation',
+            duration: 60
+        });
+    }, 8000);
+});
+
+// WebSocket integration
+if (typeof io !== 'undefined') {
+    // Add listener for illegal parking events
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.socket) {
+            window.socket.on('illegal_parking_event', function(data) {
+                console.log('Received illegal parking event:', data);
+                if (illegalParkingSystem) {
+                    illegalParkingSystem.handleNotification(data);
+                }
+            });
+        }
+    });
+}
+    </script>
+</body>
+</html>

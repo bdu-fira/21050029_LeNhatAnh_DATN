@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống nhận diện biển số xe</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.1); }
+            to { text-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 30px rgba(255,255,255,0.3); }
+        }
+
+        .nav-links {
+            margin-top: 15px;
+        }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 10px 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: inline-block;
+            margin: 0 10px;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        /* Camera dual layout */
+        .dual-camera-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .camera-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .camera-title {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .camera-frame {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(45deg, #000, #1a1a1a);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .camera-frame:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+
+        .camera-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        /* Nút điều khiển */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-entry {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: 2px solid #4CAF50;
+        }
+
+        .btn-entry:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-exit {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: 2px solid #f44336;
+        }
+
+        .btn-exit:hover {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+
+        .capture-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .capture-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .capture-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .capture-box:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        .capture-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .capture-title i {
+            color: #667eea;
+        }
+
+        .capture-image {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .capture-image:hover {
+            transform: scale(1.02);
+            border-color: #667eea;
+        }
+
+        .plate-info {
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9ff, #f0f2f8);
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+            font-weight: 500;
+            line-height: 1.6;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .stats-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4CAF50, #2196F3, #FF9800);
+        }
+
+        .stats-title {
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats-title i {
+            color: #667eea;
+            font-size: 1.6rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-box:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .stat-box div:first-child {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-box h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            position: relative;
+            z-index: 1;
+        }
+
+        .plate-list, .search-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plate-list::before, .search-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1);
+        }
+
+        .plate-list-title, .search-container h2 {
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plate-list-title i, .search-container h2 i {
+            color: #667eea;
+            font-size: 1.6rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:nth-child(even) {
+            background: rgba(102, 126, 234, 0.02);
+        }
+
+        tbody tr:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: scale(1.01);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px 20px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 50px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            color: white;
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(33, 150, 243, 0.4);
+        }
+
+        .search-results {
+            display: none;
+            margin-top: 25px;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border-radius: 15px;
+            border: 2px solid rgba(102, 126, 234, 0.1);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-results img {
+            max-width: 100%;
+            height: auto;
+            margin: 15px 0;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .search-results img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .result-info {
+            margin: 15px 0;
+            font-weight: 500;
+            line-height: 1.8;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-inactive {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .dual-camera-container,
+            .capture-container {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-particles"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-car"></i> Hệ thống nhận diện biển số xe</h1>
+            <div class="nav-links">
+                <a href="/download_plates"><i class="fas fa-download"></i> Tải xuống dữ liệu</a>
+            </div>
+        </div>
+
+        <!-- Camera kép cùng hàng -->
+        <div class="dual-camera-container">
+            <div class="camera-section">
+                <div class="camera-title">
+                    <i class="fas fa-camera"></i>Camera cổng vào
+                    <span class="status-indicator status-active" id="camera1-status"></span>
+                </div>
+                <div class="camera-frame">
+                    <img src="{{ url_for('video_feed') }}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            </div>
+
+            <div class="camera-section">
+                <div class="camera-title">
+                    <i class="fas fa-parking"></i>Camera bãi đỗ
+                    <span class="status-indicator status-active" id="camera2-status"></span>
+                </div>
+                <div class="camera-frame">
+                    <img src="{{ url_for('video_stream') }}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Nút điều khiển -->
+        <div class="controls">
+            <button class="btn btn-entry" onclick="captureEntry()">
+                <i class="fas fa-sign-in-alt"></i>Xe vào
+            </button>
+            <button class="btn btn-exit" onclick="captureExit()">
+                <i class="fas fa-sign-out-alt"></i>Xe ra
+            </button>
+        </div>
+
+        <!-- Khung hiển thị ảnh chụp và thông tin -->
+        <div class="capture-container">
+            <div class="capture-box">
+                <div class="capture-title">
+                    <i class="fas fa-arrow-right"></i>Xe vào
+                </div>
+                <div class="capture-image" id="entry-image"></div>
+                <div class="plate-info" id="entry-info">
+                    <strong>Biển số:</strong> <span id="entry-plate">---</span><br>
+                    <strong>Thời gian:</strong> <span id="entry-time">---</span>
+                </div>
+            </div>
+
+            <div class="capture-box">
+                <div class="capture-title">
+                    <i class="fas fa-arrow-left"></i>Xe ra
+                </div>
+                <div class="capture-image" id="exit-image"></div>
+                <div class="plate-info" id="exit-info">
+                    <strong>Biển số:</strong> <span id="exit-plate">---</span><br>
+                    <strong>Thời gian:</strong> <span id="exit-time">---</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thống kê lưu lượng xe -->
+        <div class="stats-container">
+            <div class="stats-title">
+                <i class="fas fa-chart-bar"></i>Thống kê lưu lượng xe
+            </div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div><i class="fas fa-car"></i> Tổng xe trong bãi</div>
+                    <h2 id="total-cars">0</h2>
+                </div>
+                <div class="stat-box">
+                    <div><i class="fas fa-plus-circle"></i> Xe vào hôm nay</div>
+                    <h2 id="entry-today">0</h2>
+                </div>
+                <div class="stat-box">
+                    <div><i class="fas fa-minus-circle"></i> Xe ra hôm nay</div>
+                    <h2 id="exit-today">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danh sách biển số -->
+        <div class="plate-list">
+            <div class="plate-list-title">
+                <i class="fas fa-list"></i>Danh sách biển số xe
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-id-card"></i> Biển số</th>
+                        <th><i class="fas fa-clock"></i> Thời gian vào</th>
+                        <th><i class="fas fa-clock"></i> Thời gian ra</th>
+                        <th><i class="fas fa-stopwatch"></i> Thời gian đỗ</th>
+                    </tr>
+                </thead>
+                <tbody id="plate-list">
+                    <!-- Dữ liệu sẽ được thêm vào đây bằng JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Phần tìm kiếm -->
+        <div class="search-container">
+            <h2><i class="fas fa-search"></i> Tìm kiếm biển số xe</h2>
+            <div class="search-box">
+                <input type="text" id="search-plate" class="search-input" placeholder="Nhập biển số xe...">
+                <button class="search-btn" onclick="searchPlate()">
+                    <i class="fas fa-search"></i>Tìm kiếm
+                </button>
+            </div>
+            <div id="search-results" class="search-results">
+                <h3><i class="fas fa-search-plus"></i> Kết quả tìm kiếm</h3>
+                <div class="result-info">
+                    <p><strong>Biển số:</strong> <span id="result-plate"></span></p>
+                    <p><strong>Thời gian vào:</strong> <span id="result-entry-time"></span></p>
+                    <p><strong>Thời gian ra:</strong> <span id="result-exit-time"></span></p>
+                </div>
+                <div>
+                    <h4><i class="fas fa-image"></i> Ảnh xe vào:</h4>
+                    <img id="result-entry-image" src="" alt="Ảnh xe vào">
+                    <h4><i class="fas fa-image"></i> Ảnh xe ra:</h4>
+                    <img id="result-exit-image" src="" alt="Ảnh xe ra">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Object to store plate data
+        const plateData = {};
+        let totalCars = 0;
+        let entryToday = 0;
+        let exitToday = 0;
+
+        // Tạo session ID duy nhất khi khởi động ứng dụng
+        let sessionId = sessionStorage.getItem('parkingSessionId');
+        if (!sessionId) {
+            sessionId = 'session_' + new Date().getTime() + '_' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem('parkingSessionId', sessionId);
+        }
+
+        // Function to create background particles
+        function createParticles() {
+            const particleContainer = document.querySelector('.bg-particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 8 + 4 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 6) + 's';
+                particleContainer.appendChild(particle);
+            }
+        }
+
+        // Function to handle entry capture
+        async function captureEntry() {
+            try {
+                const response = await fetch('/capture', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action: 'entry' })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update entry image
+                    const entryImage = document.getElementById('entry-image');
+                    entryImage.style.backgroundImage = `url(/static/captures/${data.image})`;
+                    entryImage.style.backgroundSize = 'cover';
+                    entryImage.style.backgroundPosition = 'center';
+
+                    // Update plate info
+                    document.getElementById('entry-plate').textContent = data.plate;
+                    document.getElementById('entry-time').textContent = data.timestamp;
+
+                    // Update statistics if valid plate
+                    if (data.plate && data.plate !== "Không nhận diện được biển số") {
+                        plateData[data.plate] = {
+                            entryTime: data.timestamp,
+                            exitTime: null
+                        };
+                        totalCars++;
+                        entryToday++;
+                        updateStats();
+                    }
+                    saveDataToStorage();
+
+                    // Show success notification
+                    showNotification('Đã chụp ảnh xe vào thành công!', 'success');
+                } else {
+                    showNotification("Lỗi: " + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Lỗi khi chụp ảnh:', error);
+                showNotification('Có lỗi xảy ra khi chụp ảnh xe vào', 'error');
+            }
+        }
+
+        // Function to handle exit capture
+        async function captureExit() {
+            try {
+                const response = await fetch('/capture', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action: 'exit' })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update exit image
+                    const exitImage = document.getElementById('exit-image');
+                    exitImage.style.backgroundImage = `url(/static/captures/${data.image})`;
+                    exitImage.style.backgroundSize = 'cover';
+                    exitImage.style.backgroundPosition = 'center';
+
+                    // Update plate info
+                    document.getElementById('exit-plate').textContent = data.plate;
+                    document.getElementById('exit-time').textContent = data.timestamp;
+
+                    // Update statistics if valid plate and exists in entry data
+                    if (data.plate && data.plate !== "Không nhận diện được biển số" && plateData[data.plate]) {
+                        totalCars = Math.max(0, totalCars - 1);
+                        exitToday++;
+                        plateData[data.plate].exitTime = data.timestamp;
+                        updateStats();
+                        updatePlateList(data.plate);
+                    }
+                    saveDataToStorage();
+
+                    // Show success notification
+                    showNotification('Đã chụp ảnh xe ra thành công!', 'success');
+                } else {
+                    showNotification("Lỗi: " + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Lỗi khi chụp ảnh:', error);
+                showNotification('Có lỗi xảy ra khi chụp ảnh xe ra', 'error');
+            }
+        }
+
+        // Function to show notifications
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Function to update statistics display
+        function updateStats() {
+            document.getElementById('total-cars').textContent = totalCars;
+            document.getElementById('entry-today').textContent = entryToday;
+            document.getElementById('exit-today').textContent = exitToday;
+        }
+
+        // Function to update plate list
+        function updatePlateList(plateNumber) {
+            const plateList = document.getElementById('plate-list');
+            const data = plateData[plateNumber];
+
+            if (!data.entryTime || !data.exitTime) return;
+
+            const entryTime = new Date(data.entryTime);
+            const exitTime = new Date(data.exitTime);
+            const parkingTime = Math.round((exitTime - entryTime) / (1000 * 60));
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${plateNumber}</td>
+                <td>${data.entryTime}</td>
+                <td>${data.exitTime}</td>
+                <td>${parkingTime} phút</td>
+            `;
+            plateList.appendChild(row);
+        }
+
+        // Function to search plate
+        async function searchPlate() {
+            const plateNumber = document.getElementById('search-plate').value;
+            if (!plateNumber) {
+                showNotification('Vui lòng nhập biển số xe cần tìm', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/search_plate/${plateNumber}`);
+                const data = await response.json();
+
+                if (data.found) {
+                    // Hiển thị kết quả
+                    document.getElementById('search-results').style.display = 'block';
+                    document.getElementById('result-plate').textContent = data.plate;
+                    document.getElementById('result-entry-time').textContent = data.entry_time || 'Không có dữ liệu';
+                    document.getElementById('result-exit-time').textContent = data.exit_time || 'Không có dữ liệu';
+
+                    // Hiển thị ảnh nếu có
+                    if (data.entry_image) {
+                        document.getElementById('result-entry-image').src = `/static/captures/${data.entry_image}`;
+                        document.getElementById('result-entry-image').style.display = 'block';
+                    } else {
+                        document.getElementById('result-entry-image').style.display = 'none';
+                    }
+
+                    if (data.exit_image) {
+                        document.getElementById('result-exit-image').src = `/static/captures/${data.exit_image}`;
+                        document.getElementById('result-exit-image').style.display = 'block';
+                    } else {
+                        document.getElementById('result-exit-image').style.display = 'none';
+                    }
+
+                    showNotification('Tìm thấy thông tin biển số!', 'success');
+                } else {
+                    showNotification('Không tìm thấy thông tin biển số xe này', 'error');
+                }
+            } catch (error) {
+                console.error('Lỗi khi tìm kiếm:', error);
+                showNotification('Có lỗi xảy ra khi tìm kiếm', 'error');
+            }
+        }
+
+        // Function to update camera status
+        function updateCameraStatus() {
+            // This would check camera connectivity in a real implementation
+            const camera1Status = document.getElementById('camera1-status');
+            const camera2Status = document.getElementById('camera2-status');
+
+            // For demo purposes, we'll keep them active
+            camera1Status.className = 'status-indicator status-active';
+            camera2Status.className = 'status-indicator status-active';
+        }
+
+        // Storage functions
+        function saveDataToStorage() {
+            const data = {
+                sessionId: sessionId,
+                plateData: plateData,
+                totalCars: totalCars,
+                entryToday: entryToday,
+                exitToday: exitToday,
+                lastEntryImage: document.getElementById('entry-image').style.backgroundImage,
+                lastExitImage: document.getElementById('exit-image').style.backgroundImage,
+                lastEntryPlate: document.getElementById('entry-plate').textContent,
+                lastExitPlate: document.getElementById('exit-plate').textContent,
+                lastEntryTime: document.getElementById('entry-time').textContent,
+                lastExitTime: document.getElementById('exit-time').textContent,
+                timestamp: new Date().getTime()
+            };
+
+            localStorage.setItem('parkingSystemData_' + sessionId, JSON.stringify(data));
+            localStorage.setItem('currentParkingSession', sessionId);
+        }
+
+        function loadDataFromStorage() {
+            const currentSession = localStorage.getItem('currentParkingSession');
+
+            if (currentSession && currentSession === sessionId) {
+                const savedData = localStorage.getItem('parkingSystemData_' + sessionId);
+
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+
+                    if (data.sessionId === sessionId) {
+                        Object.assign(plateData, data.plateData || {});
+                        totalCars = data.totalCars || 0;
+                        entryToday = data.entryToday || 0;
+                        exitToday = data.exitToday || 0;
+
+                        if (data.lastEntryImage) {
+                            document.getElementById('entry-image').style.backgroundImage = data.lastEntryImage;
+                        }
+                        if (data.lastExitImage) {
+                            document.getElementById('exit-image').style.backgroundImage = data.lastExitImage;
+                        }
+
+                        document.getElementById('entry-plate').textContent = data.lastEntryPlate || '---';
+                        document.getElementById('exit-plate').textContent = data.lastExitPlate || '---';
+                        document.getElementById('entry-time').textContent = data.lastEntryTime || '---';
+                        document.getElementById('exit-time').textContent = data.lastExitTime || '---';
+
+                        updateStats();
+                        loadPlateList();
+
+                        console.log('Đã khôi phục dữ liệu từ session:', sessionId);
+                    }
+                }
+            } else {
+                cleanupOldSessions();
+                console.log('Khởi tạo session mới:', sessionId);
+            }
+        }
+
+        function cleanupOldSessions() {
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.startsWith('parkingSystemData_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+
+        function loadPlateList() {
+            const plateList = document.getElementById('plate-list');
+            plateList.innerHTML = '';
+
+            for (const [plateNumber, data] of Object.entries(plateData)) {
+                if (data.entryTime && data.exitTime) {
+                    const entryTime = new Date(data.entryTime);
+                    const exitTime = new Date(data.exitTime);
+                    const parkingTime = Math.round((exitTime - entryTime) / (1000 * 60));
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${plateNumber}</td>
+                        <td>${data.entryTime}</td>
+                        <td>${data.exitTime}</td>
+                        <td>${parkingTime} phút</td>
+                    `;
+                    plateList.appendChild(row);
+                }
+            }
+        }
+
+        async function syncWithServer() {
+            try {
+                const response = await fetch('/sync_data');
+                const data = await response.json();
+
+                if (!data.error) {
+                    totalCars = data.total_cars;
+                    entryToday = Math.max(entryToday, data.entry_today);
+                    exitToday = Math.max(exitToday, data.exit_today);
+                    updateStats();
+                }
+            } catch (error) {
+                console.error('Lỗi đồng bộ với server:', error);
+            }
+        }
+
+        // Sync between tabs
+        function syncBetweenTabs() {
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'currentParkingSession' && e.newValue !== sessionId) {
+                    sessionId = e.newValue;
+                    sessionStorage.setItem('parkingSessionId', sessionId);
+                    loadDataFromStorage();
+                }
+
+                if (e.key === 'parkingSystemData_' + sessionId) {
+                    loadDataFromStorage();
+                }
+            });
+        }
+
+        // Event listeners
+        window.addEventListener('load', function() {
+            createParticles();
+            loadDataFromStorage();
+            syncWithServer();
+            syncBetweenTabs();
+            updateCameraStatus();
+
+            // Check camera status every 5 seconds
+            setInterval(updateCameraStatus, 5000);
+        });
+
+        window.addEventListener('beforeunload', function() {
+            saveDataToStorage();
+            fetch('/stop_detection');
+        });
+
+        window.addEventListener('focus', function() {
+            const currentStoredSession = localStorage.getItem('currentParkingSession');
+            if (currentStoredSession && currentStoredSession !== sessionId) {
+                sessionId = currentStoredSession;
+                sessionStorage.setItem('parkingSessionId', sessionId);
+                loadDataFromStorage();
+            }
+        });
+
+        // Reset session function
+        function resetSession() {
+            cleanupOldSessions();
+            sessionStorage.removeItem('parkingSessionId');
+            localStorage.removeItem('currentParkingSession');
+            location.reload();
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                captureEntry();
+            } else if (e.ctrlKey && e.key === 'Backspace') {
+                captureExit();
+            }
+        });
+    </script>
+</body>
+</html>

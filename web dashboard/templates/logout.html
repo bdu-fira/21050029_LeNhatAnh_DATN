@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Parking System with Logout</title>
+    <style>
+        /* User info và logout button styles */
+        .user-info-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .user-info-container:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            padding: 2px 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .user-role.admin {
+            background: rgba(76, 175, 80, 0.3);
+            color: #e8f5e8;
+        }
+
+        .user-role.guard {
+            background: rgba(33, 150, 243, 0.3);
+            color: #e3f2fd;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.4);
+        }
+
+        .logout-btn i {
+            font-size: 1rem;
+        }
+
+        /* Simple logout button cho mobile */
+        .simple-logout {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .simple-logout:hover {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(244, 67, 54, 0.4);
+        }
+
+        /* Logout confirmation modal */
+        .logout-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .logout-modal-content {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: modalSlideIn 0.3s ease-out;
+            text-align: center;
+        }
+
+        .logout-modal h3 {
+            color: #f44336;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logout-modal p {
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .logout-modal-footer {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+
+        .modal-btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .modal-btn-confirm {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(244, 67, 54, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .user-info-container {
+                top: 10px;
+                right: 10px;
+                padding: 8px 15px;
+                border-radius: 40px;
+            }
+
+            .user-info {
+                font-size: 0.8rem;
+            }
+
+            .logout-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+
+            .logout-modal-content {
+                margin: 20% auto;
+                padding: 20px;
+                width: 95%;
+            }
+
+            .logout-modal-footer {
+                flex-direction: column;
+            }
+
+            .modal-btn {
+                width: 100%;
+            }
+        }
+
+        /* Hide user info on very small screens */
+        @media (max-width: 480px) {
+            .user-info {
+                display: none;
+            }
+
+            .user-info-container {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- User Info and Logout Button -->
+    <div class="user-info-container">
+        <div class="user-info">
+            <div class="user-name">Admin User</div>
+            <div class="user-role admin">Quản trị viên</div>
+        </div>
+        <a href="#" class="logout-btn" onclick="showLogoutConfirmation(event)">
+            <i class="fas fa-sign-out-alt"></i>
+            Đăng xuất
+        </a>
+    </div>
+
+    <!-- Alternative: Simple Logout Button (uncomment to use instead) -->
+    <!--
+    <a href="#" class="simple-logout" onclick="showLogoutConfirmation(event)">
+        <i class="fas fa-sign-out-alt"></i>
+        Đăng xuất
+    </a>
+    -->
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="logout-modal">
+        <div class="logout-modal-content">
+            <h3>
+                <i class="fas fa-sign-out-alt"></i>
+                Xác nhận đăng xuất
+            </h3>
+            <p>Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?</p>
+            <div class="logout-modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="hideLogoutConfirmation()">
+                    <i class="fas fa-times"></i> Hủy
+                </button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Logout functions
+        function showLogoutConfirmation(event) {
+            event.preventDefault();
+            document.getElementById('logoutModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideLogoutConfirmation() {
+            document.getElementById('logoutModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function confirmLogout() {
+            // Show loading state
+            const confirmBtn = document.querySelector('.modal-btn-confirm');
+            const originalContent = confirmBtn.innerHTML;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng xuất...';
+            confirmBtn.disabled = true;
+
+            // Redirect to logout
+            setTimeout(() => {
+                window.location.href = '/logout';
+            }, 1000);
+        }
+
+        // Quick logout (Ctrl + L)
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'l') {
+                event.preventDefault();
+                showLogoutConfirmation(event);
+            }
+
+            // ESC to close modal
+            if (event.key === 'Escape') {
+                hideLogoutConfirmation();
+            }
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('logoutModal');
+            if (event.target === modal) {
+                hideLogoutConfirmation();
+            }
+        });
+
+        // Dynamic user info (sẽ được cập nhật từ server)
+        function updateUserInfo() {
+            // Có thể gọi API để lấy thông tin user hiện tại
+            fetch('/api/auth/check')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.authenticated) {
+                        const userNameEl = document.querySelector('.user-name');
+                        const userRoleEl = document.querySelector('.user-role');
+
+                        if (userNameEl) userNameEl.textContent = data.user.name || data.user.username;
+                        if (userRoleEl) {
+                            userRoleEl.textContent = data.user.role === 'admin' ? 'Quản trị viên' : 'Bảo vệ';
+                            userRoleEl.className = `user-role ${data.user.role}`;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking auth:', error);
+                });
+        }
+
+        // Initialize user info on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUserInfo();
+        });
+
+        // Simple logout without confirmation (alternative function)
+        function quickLogout() {
+            window.location.href = '/logout';
+        }
+    </script>
+</body>
+</html>

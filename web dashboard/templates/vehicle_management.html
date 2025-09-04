@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý xe - Hệ thống nhận diện biển số</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        /* User info và logout button styles */
+        .user-info-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .user-info-container:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            padding: 2px 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .user-role.admin {
+            background: rgba(76, 175, 80, 0.3);
+            color: #e8f5e8;
+        }
+
+        .user-role.guard {
+            background: rgba(33, 150, 243, 0.3);
+            color: #e3f2fd;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.4);
+        }
+
+        .logout-btn i {
+            font-size: 1rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            padding-top: 80px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.1); }
+            to { text-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 30px rgba(255,255,255,0.3); }
+        }
+
+        .nav-links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 10px 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .nav-links a.active {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.8);
+        }
+
+        .management-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .management-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #4CAF50);
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .search-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+        }
+
+        .search-section h2 i {
+            color: #667eea;
+            font-size: 1.6rem;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px 20px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 50px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .search-type {
+            padding: 15px 20px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 50px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-type:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 152, 0, 0.3);
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .results-header h3 {
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+        }
+
+        .results-header h3 i {
+            color: #667eea;
+            font-size: 1.6rem;
+        }
+
+        .results-count {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .page-size-select {
+            padding: 8px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .pagination-btn {
+            padding: 8px 15px;
+            border: 2px solid #667eea;
+            border-radius: 20px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .pagination-btn:hover,
+        .pagination-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .vehicle-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 25px;
+        }
+
+        .vehicle-card {
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .vehicle-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .vehicle-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #4CAF50);
+        }
+
+        .vehicle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .plate-number {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 8px 20px;
+            border-radius: 25px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            letter-spacing: 1px;
+        }
+
+        .vehicle-status {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .status-inactive {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .vehicle-photo {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(45deg, #e0e0e0, #f0f0f0);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .vehicle-photo:hover {
+            transform: scale(1.02);
+            border-color: #667eea;
+        }
+
+        .vehicle-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.3s ease;
+        }
+
+        .vehicle-photo img:hover {
+            transform: scale(1.05);
+        }
+
+        .vehicle-photo i {
+            font-size: 2.5rem;
+            color: #999;
+        }
+
+        .vehicle-info {
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            align-items: center;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 700;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-label i {
+            color: #667eea;
+            width: 16px;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .vehicle-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .btn-small {
+            padding: 10px 18px;
+            font-size: 0.9rem;
+            border-radius: 25px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn-view {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            border: none;
+        }
+
+        .btn-view:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 152, 0, 0.3);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .no-results i {
+            font-size: 5rem;
+            color: #ddd;
+            margin-bottom: 25px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .no-results h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .no-results p {
+            font-size: 1rem;
+            color: #777;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 25px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            animation: slideInDown 0.4s ease-out;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 25px 25px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+        }
+
+        .close {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close:hover {
+            background: rgba(255,255,255,0.2);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 35px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group label i {
+            color: #667eea;
+            width: 16px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+            background: white;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 35px;
+            padding-top: 25px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 18px 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 1001;
+            animation: slideInRight 0.5s ease-out;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+        }
+
+        .notification.info {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .loading i {
+            font-size: 3rem;
+            animation: spin 1s linear infinite;
+            color: #667eea;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #777;
+        }
+
+        /* Confirm modal */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            z-index: 1500;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+        }
+
+        .confirm-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            animation: slideInDown 0.4s ease-out;
+        }
+
+        .confirm-header {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+        }
+
+        .confirm-body {
+            padding: 30px;
+            text-align: center;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        /* Logout modal */
+        .logout-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .logout-modal-content {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: slideInDown 0.3s ease-out;
+            text-align: center;
+        }
+
+        .logout-modal h3 {
+            color: #f44336;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logout-modal p {
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .logout-modal-footer {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+
+        .modal-btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .modal-btn-confirm {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(244, 67, 54, 0.3);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                padding-top: 80px;
+            }
+
+            .management-container {
+                padding: 20px;
+            }
+
+            .search-controls {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: auto;
+            }
+
+            .vehicle-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .user-info-container {
+                top: 10px;
+                right: 10px;
+                padding: 8px 15px;
+                border-radius: 40px;
+            }
+
+            .user-info {
+                font-size: 0.8rem;
+            }
+
+            .logout-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .pagination-controls {
+                justify-content: center;
+            }
+
+            .vehicle-actions {
+                flex-direction: column;
+            }
+
+            .btn-small {
+                margin-bottom: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .user-info {
+                display: none;
+            }
+
+            .user-info-container {
+                padding: 8px 12px;
+            }
+
+            .vehicle-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-controls,
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .results-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-particles"></div>
+
+    <!-- User Info and Logout Button -->
+    <div class="user-info-container">
+        <div class="user-info">
+            <div class="user-name">Quản trị viên</div>
+            <div class="user-role admin">Admin</div>
+        </div>
+        <a href="#" class="logout-btn" onclick="showLogoutConfirmation(event)">
+            <i class="fas fa-sign-out-alt"></i>
+            Đăng xuất
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-cogs"></i> Quản lý xe</h1>
+            <div class="nav-links">
+                <a href="/"><i class="fas fa-home"></i> Trang chủ</a>
+                <a href="/register"><i class="fas fa-plus-circle"></i> Đăng ký xe</a>
+                <a href="/management" class="active"><i class="fas fa-cogs"></i> Quản lý xe</a>
+                <a href="/reports"><i class="fas fa-chart-line"></i> Báo cáo</a>
+                <a href="/download_plates"><i class="fas fa-download"></i> Tải xuống dữ liệu</a>
+            </div>
+        </div>
+
+        <div class="management-container">
+            <div class="search-section">
+                <h2><i class="fas fa-search"></i> Tìm kiếm và lọc xe</h2>
+                <div class="search-controls">
+                    <input type="text" class="search-input" id="search-input" placeholder="Nhập từ khóa tìm kiếm...">
+                    <select class="search-type" id="search-type">
+                        <option value="plate">Theo biển số</option>
+                        <option value="owner">Theo tên chủ xe</option>
+                        <option value="phone">Theo số điện thoại</option>
+                    </select>
+                    <button class="search-btn" onclick="searchVehicles()">
+                        <i class="fas fa-search"></i> Tìm kiếm
+                    </button>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="showAllVehicles()">
+                        <i class="fas fa-list"></i> Hiển thị tất cả
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportVehicleData()">
+                        <i class="fas fa-download"></i> Xuất dữ liệu
+                    </button>
+                    <button class="btn btn-warning" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Làm mới
+                    </button>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <div class="results-header">
+                    <h3><i class="fas fa-cars"></i> Kết quả</h3>
+                    <div class="results-count" id="results-count">
+                        <i class="fas fa-car"></i>
+                        <span id="vehicle-count">0</span> xe
+                    </div>
+                </div>
+
+                <div class="pagination-controls" id="pagination-controls">
+                    <label>Hiển thị:</label>
+                    <select class="page-size-select" id="page-size" onchange="changePageSize()">
+                        <option value="12">12 xe/trang</option>
+                        <option value="24">24 xe/trang</option>
+                        <option value="48">48 xe/trang</option>
+                    </select>
+                    <button class="pagination-btn" id="prev-btn" onclick="prevPage()" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span id="page-info">Trang 1 / 1</span>
+                    <button class="pagination-btn" id="next-btn" onclick="nextPage()" disabled>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <div id="loading" class="loading" style="display: none;">
+                    <i class="fas fa-spinner"></i>
+                    <p>Đang tải dữ liệu...</p>
+                </div>
+
+                <div id="vehicle-grid" class="vehicle-grid">
+                    <!-- Vehicles will be loaded here -->
+                </div>
+
+                <div id="no-results" class="no-results" style="display: none;">
+                    <i class="fas fa-search"></i>
+                    <h3>Không tìm thấy xe nào</h3>
+                    <p>Vui lòng thử lại với từ khóa khác hoặc thay đổi bộ lọc</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Vehicle Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Chỉnh sửa thông tin xe</h2>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="edit-plate-id">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-id-card"></i> Biển số xe</label>
+                            <input type="text" id="edit-plate" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> Tên chủ xe</label>
+                            <input type="text" id="edit-owner" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-phone"></i> Số điện thoại</label>
+                            <input type="tel" id="edit-phone">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-envelope"></i> Email</label>
+                            <input type="email" id="edit-email">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-car"></i> Loại xe</label>
+                            <select id="edit-vehicle-type" required>
+                                <option value="">Chọn loại xe</option>
+                                <option value="Xe hơi">Xe hơi</option>
+                                <option value="Xe máy">Xe máy</option>
+                                <option value="Xe tải">Xe tải</option>
+                                <option value="Xe khách">Xe khách</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-industry"></i> Hãng xe</label>
+                            <input type="text" id="edit-brand">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-cog"></i> Model</label>
+                            <input type="text" id="edit-model">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-palette"></i> Màu sắc</label>
+                            <input type="text" id="edit-color">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-sticky-note"></i> Ghi chú</label>
+                        <textarea id="edit-notes" rows="3" placeholder="Ghi chú thêm về xe..."></textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">
+                            <i class="fas fa-times"></i> Hủy
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Vehicle Modal -->
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-eye"></i> Chi tiết xe</h2>
+                <span class="close" onclick="closeViewModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="vehicle-details">
+                    <!-- Vehicle details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="confirm-modal">
+        <div class="confirm-content">
+            <div class="confirm-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Xác nhận xóa</h3>
+            </div>
+            <div class="confirm-body">
+                <p>Bạn có chắc chắn muốn xóa xe <strong id="delete-plate-text"></strong> không?</p>
+                <p style="color: #f44336; font-size: 0.9rem;">Hành động này không thể hoàn tác!</p>
+                <div class="confirm-actions">
+                    <button class="btn btn-secondary" onclick="closeDeleteModal()">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                    <button class="btn btn-delete" onclick="confirmDelete()">
+                        <i class="fas fa-trash"></i> Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Modal -->
+    <div id="logoutModal" class="logout-modal">
+        <div class="logout-modal-content">
+            <h3>
+                <i class="fas fa-sign-out-alt"></i>
+                Xác nhận đăng xuất
+            </h3>
+            <p>Bạn có chắc chắn muốn đăng xuất không?</p>
+            <div class="logout-modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="hideLogoutConfirmation()">
+                    <i class="fas fa-times"></i> Hủy
+                </button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // FIXED JavaScript with proper error handling
+
+        let currentPage = 1;
+        let pageSize = 12;
+        let totalPages = 1;
+        let currentSearch = '';
+        let currentSearchType = 'plate';
+        let allVehicles = [];
+        let deleteVehicleId = null;
+
+        // FIXED: Safe element access function
+        function safeGetElement(id) {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.warn(`Element with id '${id}' not found`);
+                return null;
+            }
+            return element;
+        }
+
+        // FIXED: Safe element content update
+        function safeUpdateElement(id, content, property = 'textContent') {
+            const element = safeGetElement(id);
+            if (element) {
+                try {
+                    if (property === 'innerHTML') {
+                        element.innerHTML = content;
+                    } else if (property === 'style') {
+                        Object.assign(element.style, content);
+                    } else {
+                        element[property] = content;
+                    }
+                } catch (error) {
+                    console.error(`Error updating element ${id}:`, error);
+                }
+            }
+        }
+
+        // Function to create background particles
+        function createParticles() {
+            const particleContainer = document.querySelector('.bg-particles');
+            if (!particleContainer) return;
+
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 6 + 3 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 6) + 's';
+                particleContainer.appendChild(particle);
+            }
+        }
+
+        // FIXED: Show notification function
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => notification.remove());
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                ${message}
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // FIXED: Load all vehicles
+        async function loadVehicles(search = '', searchType = 'plate', page = 1) {
+            try {
+                showLoading(true);
+
+                const searchParams = new URLSearchParams({
+                    page: page,
+                    per_page: pageSize,
+                    search: search,
+                    search_type: searchType
+                });
+
+                const response = await fetch(`/api/vehicles/all?${searchParams}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    allVehicles = data.vehicles;
+                    displayVehicles(allVehicles);
+                    updatePagination(data.pagination);
+                    safeUpdateElement('vehicle-count', data.pagination.total);
+                } else {
+                    showNotification('Lỗi khi tải dữ liệu xe: ' + data.error, 'error');
+                    displayNoResults();
+                }
+            } catch (error) {
+                console.error('Error loading vehicles:', error);
+                showNotification('Có lỗi xảy ra khi tải dữ liệu', 'error');
+                displayNoResults();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // FIXED: Display vehicles
+        function displayVehicles(vehicles) {
+            const grid = safeGetElement('vehicle-grid');
+            const noResults = safeGetElement('no-results');
+
+            if (!grid) return;
+
+            if (vehicles.length === 0) {
+                grid.style.display = 'none';
+                if (noResults) noResults.style.display = 'block';
+                return;
+            }
+
+            if (noResults) noResults.style.display = 'none';
+            grid.style.display = 'grid';
+
+            grid.innerHTML = vehicles.map(vehicle => `
+                <div class="vehicle-card">
+                    <div class="vehicle-header">
+                        <div class="plate-number">${vehicle.plate_number || 'N/A'}</div>
+                        <div class="vehicle-status ${vehicle.is_active ? 'status-active' : 'status-inactive'}">
+                            ${vehicle.is_active ? 'Hoạt động' : 'Ngừng hoạt động'}
+                        </div>
+                    </div>
+
+                    <div class="vehicle-photo">
+                        ${vehicle.photo_path ?
+                            `<img src="/static/vehicle_photos/${vehicle.photo_path}" alt="Ảnh xe" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-car\\'></i>'">` :
+                            '<i class="fas fa-car"></i>'
+                        }
+                    </div>
+
+                    <div class="vehicle-info">
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-user"></i> Chủ xe:</span>
+                            <span class="info-value">${vehicle.owner_name || 'Không xác định'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-car"></i> Loại xe:</span>
+                            <span class="info-value">${vehicle.vehicle_type || 'Không xác định'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-phone"></i> Điện thoại:</span>
+                            <span class="info-value">${vehicle.owner_phone || 'Không có'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-industry"></i> Hãng xe:</span>
+                            <span class="info-value">${vehicle.vehicle_brand || 'Không xác định'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-calendar"></i> Đăng ký:</span>
+                            <span class="info-value">${formatDate(vehicle.registration_date)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-eye"></i> Lượt vào:</span>
+                            <span class="info-value">${vehicle.visit_count || 0} lần</span>
+                        </div>
+                    </div>
+
+                    <div class="vehicle-actions">
+                        <button class="btn btn-small btn-view" onclick="viewVehicle('${vehicle.plate_number}')">
+                            <i class="fas fa-eye"></i> Xem
+                        </button>
+                        <button class="btn btn-small btn-edit" onclick="editVehicle('${vehicle.plate_number}')">
+                            <i class="fas fa-edit"></i> Sửa
+                        </button>
+                        <button class="btn btn-small btn-delete" onclick="deleteVehicle('${vehicle.plate_number}')">
+                            <i class="fas fa-trash"></i> Xóa
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // FIXED: Update pagination
+        function updatePagination(pagination) {
+            if (!pagination) return;
+
+            currentPage = pagination.page;
+            totalPages = pagination.pages;
+
+            safeUpdateElement('page-info', `Trang ${currentPage} / ${totalPages}`);
+
+            const prevBtn = safeGetElement('prev-btn');
+            const nextBtn = safeGetElement('next-btn');
+
+            if (prevBtn) {
+                prevBtn.disabled = currentPage <= 1;
+            }
+            if (nextBtn) {
+                nextBtn.disabled = currentPage >= totalPages;
+            }
+        }
+
+        // FIXED: Show loading state
+        function showLoading(show) {
+            const loading = safeGetElement('loading');
+            const grid = safeGetElement('vehicle-grid');
+
+            if (loading) {
+                loading.style.display = show ? 'block' : 'none';
+            }
+            if (grid) {
+                grid.style.display = show ? 'none' : 'grid';
+            }
+        }
+
+        // FIXED: Display no results
+        function displayNoResults() {
+            const grid = safeGetElement('vehicle-grid');
+            const noResults = safeGetElement('no-results');
+
+            if (grid) grid.style.display = 'none';
+            if (noResults) noResults.style.display = 'block';
+        }
+
+        // FIXED: Format date
+        function formatDate(dateString) {
+            if (!dateString) return 'Không xác định';
+
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('vi-VN');
+            } catch (error) {
+                return 'Không xác định';
+            }
+        }
+
+        // Search functions
+        function searchVehicles() {
+            const searchInput = safeGetElement('search-input');
+            const searchType = safeGetElement('search-type');
+
+            if (searchInput && searchType) {
+                currentSearch = searchInput.value.trim();
+                currentSearchType = searchType.value;
+                currentPage = 1;
+                loadVehicles(currentSearch, currentSearchType, currentPage);
+            }
+        }
+
+        function showAllVehicles() {
+            const searchInput = safeGetElement('search-input');
+            if (searchInput) searchInput.value = '';
+
+            currentSearch = '';
+            currentSearchType = 'plate';
+            currentPage = 1;
+            loadVehicles();
+        }
+
+        // Pagination functions
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadVehicles(currentSearch, currentSearchType, currentPage);
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadVehicles(currentSearch, currentSearchType, currentPage);
+            }
+        }
+
+        function changePageSize() {
+            const pageSizeSelect = safeGetElement('page-size');
+            if (pageSizeSelect) {
+                pageSize = parseInt(pageSizeSelect.value);
+                currentPage = 1;
+                loadVehicles(currentSearch, currentSearchType, currentPage);
+            }
+        }
+
+        // Vehicle actions
+        async function viewVehicle(plateNumber) {
+            try {
+                const vehicle = allVehicles.find(v => v.plate_number === plateNumber);
+                if (!vehicle) {
+                    showNotification('Không tìm thấy thông tin xe', 'error');
+                    return;
+                }
+
+                const detailsContainer = safeGetElement('vehicle-details');
+                if (detailsContainer) {
+                    detailsContainer.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div class="plate-number" style="font-size: 2rem; margin-bottom: 20px;">${vehicle.plate_number}</div>
+                            ${vehicle.photo_path ?
+                                `<div class="vehicle-photo" style="margin: 0 auto; max-width: 300px;">
+                                    <img src="/static/vehicle_photos/${vehicle.photo_path}" alt="Ảnh xe" style="width: 100%; height: 200px; object-fit: cover;">
+                                </div>` :
+                                `<div class="vehicle-photo" style="margin: 0 auto; max-width: 300px;">
+                                    <i class="fas fa-car" style="font-size: 3rem; color: #ccc;"></i>
+                                </div>`
+                            }
+                        </div>
+
+                        <div class="vehicle-info">
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-user"></i> Chủ xe:</span>
+                                <span class="info-value">${vehicle.owner_name || 'Không xác định'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-phone"></i> Số điện thoại:</span>
+                                <span class="info-value">${vehicle.owner_phone || 'Không có'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-envelope"></i> Email:</span>
+                                <span class="info-value">${vehicle.owner_email || 'Không có'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-car"></i> Loại xe:</span>
+                                <span class="info-value">${vehicle.vehicle_type || 'Không xác định'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-industry"></i> Hãng xe:</span>
+                                <span class="info-value">${vehicle.vehicle_brand || 'Không xác định'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-cog"></i> Model:</span>
+                                <span class="info-value">${vehicle.vehicle_model || 'Không xác định'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-palette"></i> Màu sắc:</span>
+                                <span class="info-value">${vehicle.vehicle_color || 'Không xác định'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-calendar"></i> Ngày đăng ký:</span>
+                                <span class="info-value">${formatDate(vehicle.registration_date)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-eye"></i> Số lần vào bãi:</span>
+                                <span class="info-value">${vehicle.visit_count || 0} lần</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-clock"></i> Lần cuối vào:</span>
+                                <span class="info-value">${vehicle.last_visit ? formatDate(vehicle.last_visit) : 'Chưa có'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-toggle-${vehicle.is_active ? 'on' : 'off'}"></i> Trạng thái:</span>
+                                <span class="info-value">
+                                    <span class="vehicle-status ${vehicle.is_active ? 'status-active' : 'status-inactive'}">
+                                        ${vehicle.is_active ? 'Hoạt động' : 'Ngừng hoạt động'}
+                                    </span>
+                                </span>
+                            </div>
+                            ${vehicle.notes ? `
+                                <div class="info-row">
+                                    <span class="info-label"><i class="fas fa-sticky-note"></i> Ghi chú:</span>
+                                    <span class="info-value">${vehicle.notes}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                const viewModal = safeGetElement('viewModal');
+                if (viewModal) {
+                    viewModal.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error viewing vehicle:', error);
+                showNotification('Có lỗi xảy ra khi xem thông tin xe', 'error');
+            }
+        }
+
+        async function editVehicle(plateNumber) {
+            try {
+                const vehicle = allVehicles.find(v => v.plate_number === plateNumber);
+                if (!vehicle) {
+                    showNotification('Không tìm thấy thông tin xe', 'error');
+                    return;
+                }
+
+                // Populate form fields - FIXED
+                safeUpdateElement('edit-plate-id', vehicle.plate_number, 'value');
+                safeUpdateElement('edit-plate', vehicle.plate_number, 'value');
+                safeUpdateElement('edit-owner', vehicle.owner_name || '', 'value');
+                safeUpdateElement('edit-phone', vehicle.owner_phone || '', 'value');
+                safeUpdateElement('edit-email', vehicle.owner_email || '', 'value');
+                safeUpdateElement('edit-vehicle-type', vehicle.vehicle_type || '', 'value');
+                safeUpdateElement('edit-brand', vehicle.vehicle_brand || '', 'value');
+                safeUpdateElement('edit-model', vehicle.vehicle_model || '', 'value');
+                safeUpdateElement('edit-color', vehicle.vehicle_color || '', 'value');
+                safeUpdateElement('edit-notes', vehicle.notes || '', 'value');
+
+                const editModal = safeGetElement('editModal');
+                if (editModal) {
+                    editModal.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error editing vehicle:', error);
+                showNotification('Có lỗi xảy ra khi tải thông tin xe', 'error');
+            }
+        }
+
+        function deleteVehicle(plateNumber) {
+            deleteVehicleId = plateNumber;
+            safeUpdateElement('delete-plate-text', plateNumber);
+
+            const deleteModal = safeGetElement('deleteModal');
+            if (deleteModal) {
+                deleteModal.style.display = 'block';
+            }
+        }
+
+        async function confirmDelete() {
+            if (!deleteVehicleId) return;
+
+            try {
+                const response = await fetch(`/api/vehicles/delete/${deleteVehicleId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Đã xóa xe thành công', 'success');
+                    closeDeleteModal();
+                    loadVehicles(currentSearch, currentSearchType, currentPage);
+                } else {
+                    showNotification('Lỗi khi xóa xe: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting vehicle:', error);
+                showNotification('Có lỗi xảy ra khi xóa xe', 'error');
+            }
+        }
+
+        // Modal functions
+        function closeEditModal() {
+            const editModal = safeGetElement('editModal');
+            if (editModal) {
+                editModal.style.display = 'none';
+            }
+        }
+
+        function closeViewModal() {
+            const viewModal = safeGetElement('viewModal');
+            if (viewModal) {
+                viewModal.style.display = 'none';
+            }
+        }
+
+        function closeDeleteModal() {
+            const deleteModal = safeGetElement('deleteModal');
+            if (deleteModal) {
+                deleteModal.style.display = 'none';
+            }
+            deleteVehicleId = null;
+        }
+
+        // Logout functions
+        function showLogoutConfirmation(event) {
+            event.preventDefault();
+            const logoutModal = safeGetElement('logoutModal');
+            if (logoutModal) {
+                logoutModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function hideLogoutConfirmation() {
+            const logoutModal = safeGetElement('logoutModal');
+            if (logoutModal) {
+                logoutModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function confirmLogout() {
+            // Show loading state
+            const confirmBtn = document.querySelector('.modal-btn-confirm');
+            const originalContent = confirmBtn ? confirmBtn.innerHTML : '';
+
+            if (confirmBtn) {
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng xuất...';
+                confirmBtn.disabled = true;
+            }
+
+            // Clear local data
+            sessionStorage.clear();
+            localStorage.clear();
+
+            // Redirect to logout
+            setTimeout(() => {
+                window.location.href = '/logout';
+            }, 1000);
+        }
+
+        // Form submission
+        async function handleEditSubmit(event) {
+            event.preventDefault();
+
+            try {
+                const plateNumber = safeGetElement('edit-plate-id')?.value;
+                if (!plateNumber) {
+                    showNotification('Không tìm thấy biển số xe', 'error');
+                    return;
+                }
+
+                const formData = {
+                    owner_name: safeGetElement('edit-owner')?.value.trim(),
+                    owner_phone: safeGetElement('edit-phone')?.value.trim(),
+                    owner_email: safeGetElement('edit-email')?.value.trim(),
+                    vehicle_type: safeGetElement('edit-vehicle-type')?.value,
+                    vehicle_brand: safeGetElement('edit-brand')?.value.trim(),
+                    vehicle_model: safeGetElement('edit-model')?.value.trim(),
+                    vehicle_color: safeGetElement('edit-color')?.value.trim(),
+                    notes: safeGetElement('edit-notes')?.value.trim()
+                };
+
+                // Validate required fields
+                if (!formData.owner_name) {
+                    showNotification('Vui lòng nhập tên chủ xe', 'error');
+                    return;
+                }
+
+                if (!formData.vehicle_type) {
+                    showNotification('Vui lòng chọn loại xe', 'error');
+                    return;
+                }
+
+                const response = await fetch(`/api/vehicles/update/${plateNumber}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Đã cập nhật thông tin xe thành công', 'success');
+                    closeEditModal();
+                    loadVehicles(currentSearch, currentSearchType, currentPage);
+                } else {
+                    showNotification('Lỗi khi cập nhật: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating vehicle:', error);
+                showNotification('Có lỗi xảy ra khi cập nhật thông tin xe', 'error');
+            }
+        }
+
+        // Export function
+        async function exportVehicleData() {
+            try {
+                showNotification('Đang chuẩn bị file xuất...', 'info');
+
+                const response = await fetch('/download_plates');
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `vehicle_data_${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    showNotification('Đã xuất dữ liệu thành công', 'success');
+                } else {
+                    showNotification('Lỗi khi xuất dữ liệu', 'error');
+                }
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                showNotification('Có lỗi xảy ra khi xuất dữ liệu', 'error');
+            }
+        }
+
+        // Refresh function
+        function refreshData() {
+            showNotification('Đang làm mới dữ liệu...', 'info');
+            loadVehicles(currentSearch, currentSearchType, currentPage);
+        }
+
+        // FIXED: Event listeners
+        function setupEventListeners() {
+            try {
+                // Edit form submission
+                const editForm = safeGetElement('editForm');
+                if (editForm) {
+                    editForm.addEventListener('submit', handleEditSubmit);
+                }
+
+                // Search on Enter key
+                const searchInput = safeGetElement('search-input');
+                if (searchInput) {
+                    searchInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            searchVehicles();
+                        }
+                    });
+                }
+
+                // Close modals when clicking outside
+                window.addEventListener('click', function(event) {
+                    const editModal = safeGetElement('editModal');
+                    const viewModal = safeGetElement('viewModal');
+                    const deleteModal = safeGetElement('deleteModal');
+                    const logoutModal = safeGetElement('logoutModal');
+
+                    if (event.target === editModal) {
+                        closeEditModal();
+                    }
+                    if (event.target === viewModal) {
+                        closeViewModal();
+                    }
+                    if (event.target === deleteModal) {
+                        closeDeleteModal();
+                    }
+                    if (event.target === logoutModal) {
+                        hideLogoutConfirmation();
+                    }
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        closeEditModal();
+                        closeViewModal();
+                        closeDeleteModal();
+                        hideLogoutConfirmation();
+                    } else if (e.ctrlKey && e.key === 'f') {
+                        e.preventDefault();
+                        const searchInput = safeGetElement('search-input');
+                        if (searchInput) searchInput.focus();
+                    } else if (e.ctrlKey && e.key === 'r') {
+                        e.preventDefault();
+                        refreshData();
+                    } else if (e.ctrlKey && e.key === 'l') {
+                        e.preventDefault();
+                        showLogoutConfirmation(e);
+                    }
+                });
+
+                console.log('Event listeners setup completed');
+            } catch (error) {
+                console.error('Error setting up event listeners:', error);
+            }
+        }
+
+        // FIXED: Initialize page
+        window.addEventListener('load', function() {
+            try {
+                createParticles();
+                setupEventListeners();
+                loadVehicles();
+
+                console.log('Vehicle management page initialized successfully');
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                showNotification('Có lỗi xảy ra khi khởi tạo trang', 'error');
+            }
+        });
+
+        // Prevent form submission on Enter in input fields (except search)
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input:not(#search-input)');
+            inputs.forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && e.target.type !== 'submit') {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+
+        console.log('Vehicle Management System loaded successfully with error handling');
+    </script>
+</body>
+</html>
